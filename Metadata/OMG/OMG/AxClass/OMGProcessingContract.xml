@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGProcessingContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Data contract for message types
+/// </summary>
+[DataContractAttribute]
+class OMGProcessingContract
+{
+    OMGMessageTypeId    messageTypeId;
+    container           recordContainer;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmMessageTypeId</Name>
+				<Source><![CDATA[
+    [DataMember]
+    public OMGMessageTypeId parmMessageTypeId(OMGMessageTypeId _messageTypeId = messageTypeId)
+    {
+        messageTypeId = _messageTypeId;
+        return messageTypeId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmRecordContainer</Name>
+				<Source><![CDATA[
+    [DataMember]
+    public container parmRecordContainer(container _recordContainer = recordContainer)
+    {
+        recordContainer = _recordContainer;
+
+        return recordContainer;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

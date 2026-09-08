@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGUploadSingleMessageContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Data contract class for importing single files into OMGInboundMessageTable
+/// </summary>
+[DataContract, SysOperationContractProcessing(classStr(OMGUploadSingleMessageUI))]
+class OMGUploadSingleMessageContract extends SysOperationDataContractBase implements SysOperationValidatable
+{
+    private System.IO.Stream    fileStram;
+    private str                 fileName;
+    OMGBase64Encode             base64Encode;
+    OMGCodePage                 codePage;
+    OMGMessageTypeId            messageTypeId;
+    OMGMessageGUID              messageGUID;
+    OMGMessageName              messageName;
+    
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmFileStream</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Gets or sets class state value
+    /// </summary>
+    /// <param name = "_value">A value to be set [optional]</param>
+    /// <returns>A class state value</returns>
+    public System.IO.Stream parmFileStream(System.IO.Stream _value = fileStram)
+    {
+        fileStram = _value;
+        return fileStram;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmFileName</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Gets or sets class state value
+    /// </summary>
+    /// <param name = "_value">A value to be set [optional]</param>
+    /// <returns>A class state value</returns>
+    public str parmFileName(str _value = fileName)
+    {
+        fileName = _value;
+        return fileName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMessageGUID</Name>
+				<Source><![CDATA[
+    public OMGMessageGUID parmMessageGUID(OMGMessageGUID _messageGUID = messageGUID)
+    {
+        messageGUID = _messageGUID;
+    
+        return messageGUID;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getAvailableFileTypes</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Retruns list of available file extensions
+    /// </summary>
+    /// <returns>List of available file extensions</returns>
+    /// <remarks>
+    /// Empty list means 'all files'. Provide available file extensions by dividing them by comma.
+    /// Example: '.txt,.csv'
+    /// </remarks>
+    public str getAvailableFileTypes()
+    {
+        return '';
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMessageTypeId</Name>
+				<Source><![CDATA[
+    [DataMember, SysOperationDisplayOrder('1')]
+    public OMGMessageTypeId parmMessageTypeId(OMGMessageTypeId _messageTypeId = messageTypeId)
+    {
+        messageTypeId = _messageTypeId;
+
+        return messageTypeId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCodePage</Name>
+				<Source><![CDATA[
+    [DataMember, SysOperationDisplayOrder('2')]
+    public OMGCodePage parmCodePage(OMGCodePage _codePage = codePage)
+    {
+        codePage = _codePage;
+
+        return codePage;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmBase64Encode</Name>
+				<Source><![CDATA[
+    [DataMember, SysOperationDisplayOrder('3')]
+    public OMGBase64Encode parmBase64Encode(OMGBase64Encode _base64Encode = base64Encode)
+    {
+        base64Encode = _base64Encode;
+
+        return base64Encode;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMesageName</Name>
+				<Source><![CDATA[
+    [DataMember, SysOperationDisplayOrder('4')]
+    public OMGMessageName parmMesageName(OMGMessageName _messageName = messageName)
+    {
+        messageName = _messageName;
+    
+        return messageName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validate</Name>
+				<Source><![CDATA[
+    public boolean validate()
+    {
+        boolean     ret = true;
+        ;
+
+        if (!this.parmCodePage())
+        {
+            ret = checkFailed("@OMG:CodePageMissing");
+        }
+
+        if (!this.parmMesageName())
+        {
+            ret = checkFailed("@OMG:MessageNameMissing");
+        }
+
+        if (!this.parmMessageTypeId())
+        {
+            ret = checkFailed("@OMG:MessageTypeMissing");
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

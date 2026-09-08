@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundDataContract_AzureFileShare</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Data contract class holding the parameters for file upload to Azure file share
+/// </summary>
+[DataContract]
+class OMGOutboundDataContract_AzureFileShare extends OMGOutboundDataContract_Azure
+{   
+    OMGFileShareName        fileShareName;
+    OMGTargetDirectory      targetDirectory;
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmFileShareName</Name>
+				<Source><![CDATA[
+    [DataMember, OMGAzureFileShareName, SysOperationDisplayOrder('3')]
+    public OMGFileShareName parmFileShareName(OMGFileShareName _fileShareName = fileShareName)
+    {
+        fileShareName = _fileShareName;
+        return fileShareName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmTargetDirectory</Name>
+				<Source><![CDATA[
+    [DataMember, OMGAzureFileShareDirectory, SysOperationDisplayOrder('4')]
+    public OMGTargetDirectory parmTargetDirectory(OMGTargetDirectory _targetDirectory = targetDirectory)
+    {
+        targetDirectory = _targetDirectory;
+        return targetDirectory;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validationClassId</Name>
+				<Source><![CDATA[
+    public ClassId validationClassId()
+    {
+        return classNum(OMGAzureValidator_OutboundFileShare);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialogCaption</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// The caption used on the dialog
+    /// </summary>
+    /// <returns>A descriptive text</returns>
+    public Description dialogCaption()
+    {
+        return "@OMG:ExportToAzureFileShares";
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

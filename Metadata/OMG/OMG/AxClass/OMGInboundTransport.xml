@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundTransport</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Base class for "importing" messages to OMGInboundMessageTable
+/// </summary>
+abstract class OMGInboundTransport extends SysOperationFrameworkService
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>messageCount</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Reurns the number of records (messages) fetched
+    /// </summary>
+    /// <returns>Number of messages</returns>
+    protected abstract int64 messageCount()
+    {
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>messageSize</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Returns the total size of the messages fetched
+    /// </summary>
+    /// <returns>Size in bytes</returns>
+    protected abstract int64 messageSize()
+    {
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processOperation</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Does the actual processing
+    /// </summary>
+    /// <param name = "_dataContract">Inbound transport contract class</param>    
+    public void processOperation(OMGInboundTransportContract _dataContract)
+    {
+        OMGMessageTypeTable messageTypeTable = OMGMessageTypeTable::find(_dataContract.parmMessageTypeId());
+        ;
+            
+        if (this.validateDataContract(messageTypeTable, this.dataContractClass()))
+        {
+            if (messageTypeTable.ApplicationInsightLogging)
+            {
+                using (OMGApplicationInsightsFetch applInsights = OMGApplicationInsightsFetch::newMessageTypeId(messageTypeTable.MessageTypeId))
+                {
+                    this.doTransport(_dataContract);
+                    applInsights.addMessageCountProperty(this.messageCount());
+                    applInsights.addMessageSizeProperty(this.messageSize());
+                }
+            }
+            else
+            {
+                this.doTransport(_dataContract);
+            }
+        }
+        else
+        {
+            throw Error("@OMG:FetchCancelled");
+        }
+        
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dataContractClass</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Specifies the class id of the corresponding data contract
+    /// </summary>
+    /// <returns>The class id</returns>
+    public abstract ClassId dataContractClass()
+    {
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>doTransport</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Does the actual transport
+    /// </summary>
+    /// <param name = "_dataContract">Inbound data contract</param>    
+    public abstract void doTransport(OMGInboundTransportContract _dataContract)
+    {
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateDataContract</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates the parameters in the data contract
+    /// </summary>
+    /// <param name = "_messageTypeTable">The message type the data contract belongs to</param>
+    /// <param name = "_dataContractClassID">The id of the data contract class</param>
+    /// <returns>True if all ok</returns>
+    public boolean validateDataContract(OMGMessageTypeTable _messageTypeTable,
+                                        ClassId             _dataContractClassID)
+    {
+        SysDictClass    sysDictDataContractClass    = new SysDictClass(_dataContractClassId);
+        Object          parameterClassObject        = FormJsonSerializer::deserializeObject(_dataContractClassId, _messageTypeTable.InboundSerializedParameterContract);
+        boolean         ret = true;
+        ;
+
+        if (sysDictDataContractClass.hasObjectMethod('validate'))
+        {
+            setPrefix(strFmt("@OMG:ValidatingParametersForMsgType", _messageTypeTable.MessageTypeId));
+            ret = sysDictDataContractClass.callObject('validate', parameterClassObject);
+
+            if (ret)
+            {
+                info("@OMG:AllParametersOk");
+            }
+        }
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>onInboundMessageInserted</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Delegate for message inserted
+    /// </summary>
+    /// <param name = "_inboundMessage">The message in question</param>
+    delegate void onInboundMessageInserted(OMGInboundMessageTable _inboundMessage){}
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxEnum xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGPostImportAction</Name>
+	<Label>@OMG:PostImportAction</Label>
+	<EnumValues>
+		<AxEnumValue>
+			<Name>Archive</Name>
+			<Label>@OMG:Archive</Label>
+			<Value>1</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Delete</Name>
+			<Label>@OMG:Delete</Label>
+			<Value>2</Value>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>NoAction</Name>
+			<Label>@OMG:NoAction</Label>
+		</AxEnumValue>
+	</EnumValues>
+</AxEnum>

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGAzureFileShareWriter</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Azure.Storage;
+using Azure.Storage.Files.Shares;
+using Azure.Storage.Files.Shares.Models;
+using System.Collections;
+using System.Threading;
+
+/// <summary>
+/// Class for writing files on an Azure file share
+/// </summary>
+class OMGAzureFileShareWriter extends omgazurefileShare
+{
+    OMGOutboundDataContract_AzureFileShare  dataContract;
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>writeFile</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Writes a stream to a file on Azure file share
+    /// </summary>
+    /// <param name = "_stream">The stream to write</param>
+    /// <param name = "_filename">The name of the file to create from the stream</param>
+    /// <param name = "_targetDirectory">The directory to write the file in</param>
+    /// <returns>True if the file was written to the target</returns>
+    public boolean writeFile(System.IO.Stream   _stream,
+                             Filename           _filename,
+                             filename           _targetDirectory)
+    {
+        ShareClient             share   = new ShareClient(KeyVaultCertificateHelper::getManualSecretValue(keyVaultCertificateRef), dataContract.parmFileShareName());
+        ShareDirectoryClient    targetDirectoryClient;
+        ShareFileClient         fileClient;
+        str                     targetDirectory = dataContract.parmTargetDirectory();
+        boolean                 ret = true;
+        ;
+        
+        if (_targetDirectory)
+        {
+            targetDirectory    = dataContract.parmTargetDirectory() + '/' + _targetDirectory;
+        }
+
+        
+        targetDirectory = OMGFeatures::removeFirstChar(targetDirectory, '/');
+        container   myCont = str2con(targetDirectory, '/');
+        myCont = conDel(myCont, 1, 1);
+        targetDirectory = con2Str(myCont, '/');
+
+        if (share.Exists(CancellationToken::None))
+        {
+            targetDirectoryClient = share.GetDirectoryClient(targetDirectory);
+            targetDirectoryClient.CreateIfNotExists(null, null, null, CancellationToken::None);
+
+            if (targetDirectoryClient.Exists(CancellationToken::None))
+            {
+                fileClient = targetDirectoryClient.GetFileClient(_filename);
+                
+                if (fileClient.Exists(CancellationToken::None))
+                {
+                    // Upload from the local file to the file share in azure.                    
+                    fileClient.Create(_stream.get_Length(), null, null, null, null, null, CancellationToken::None);
+                    fileClient.Upload(_stream, null, CancellationToken::None);
+                }                
+            }
+            else
+            {
+                ret = checkFailed(strfmt("@OMG:AzureDirectoryDoesNotExist", dataContract.parmTargetDirectory() + '/' + _targetDirectory));
+            }
+        }
+        else
+        {
+            ret = checkFailed(strFmt("@OMG:AzureFileShareDoesNotExist", dataContract.parmFileShareName()));
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDataContract</Name>
+				<Source><![CDATA[
+    public OMGOutboundDataContract_AzureFileShare parmDataContract(OMGOutboundDataContract_AzureFileShare _dataContract = dataContract)
+    {
+        dataContract = _dataContract;
+
+        return dataContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>newFromDataContract</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiates the class based on a parameter contract
+    /// </summary>
+    /// <param name = "_dataContract">The parameter contract</param>
+    /// <returns>The instantiated class</returns>
+    public static OMGAzureFileShareWriter newFromDataContract(OMGOutboundDataContract_AzureFileShare _dataContract)                
+    {
+        OMGAzureFileShareWriter    azureFileShareWriter = new OMGAzureFileShareWriter();
+        ;
+
+        azureFileShareWriter.parmDataContract(_dataContract);
+        azureFileShareWriter.parmKeyVaultCertificateRef(_dataContract.parmKeyVaultCertificateRef());
+
+        return azureFileShareWriter;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

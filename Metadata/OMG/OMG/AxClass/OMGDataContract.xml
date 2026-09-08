@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGDataContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Base abstract class for OMG data contracts
+/// </summary>
+abstract class OMGDataContract
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>validate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Ensures that classes extending this overwrites the validate method
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    abstract public boolean validate()
+    {
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validationClassId</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Returns the class id of the class that should be used for validating the data contract
+    /// </summary>
+    /// <returns>The id of that class</returns>
+    abstract public ClassId validationClassId()
+    {
+    
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

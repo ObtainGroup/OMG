@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundMessageResponseContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Contract class containing response from inbound message processing
+/// </summary>
+[DataContract]
+public class OMGInboundMessageResponseContract
+{
+    str                 response;
+    boolean             processed;
+    boolean             processedOk;
+    OMGExecutionId      executionId;
+    OMGProcessingStatus processingStatus;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmResponse</Name>
+				<Source><![CDATA[
+    [DataMember('Response')]
+    public str parmResponse(str _response = response)
+    {
+        response = _response;
+        return _response;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmProcessed</Name>
+				<Source><![CDATA[
+    [DataMember('Processed')]
+    public boolean parmProcessed(boolean _processed = processed)
+    {
+        processed = _processed;
+        return processed;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmProcessedOk</Name>
+				<Source><![CDATA[
+    [DataMember('ProcessedOk')]
+    public boolean parmProcessedOk(boolean _processedOk = processedOk)
+    {
+        processedOk = _processedOk;
+        return processedOk;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmExecutionId</Name>
+				<Source><![CDATA[
+    [DataMember('ExecutionId')]
+    public OMGExecutionId parmExecutionId(OMGExecutionId _executionId = executionId)
+    {
+        executionId = _executionId;
+        return executionId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmProcessingStatus</Name>
+				<Source><![CDATA[
+    [DataMember('ProcessingStatus')]
+    public OMGProcessingStatus parmProcessingStatus(OMGProcessingStatus _processingStatus = processingStatus)
+    {
+        processingStatus = _processingStatus;
+        return processingStatus;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

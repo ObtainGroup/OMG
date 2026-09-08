@@ -1,0 +1,403 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGAzureContainerReader</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Azure.Storage;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using Azure.Storage.Blobs.Specialized;
+using System.Threading;
+using System.Threading.Tasks;
+
+/// <summary>
+/// Helper class for reading Azure blob containers
+/// </summary>
+class OMGAzureContainerReader
+{
+    BlobServiceClient           blobServiceClient;
+    BlobContainerClient         blobContainerClient;
+
+    KeyVaultCertificateRef      keyVaultCertificateRef;
+    str                         connectionStr;
+    OMGAzureTargetContainer     inboundContainerName;
+    OMGPostImportAction         postImportAction;
+
+    OMGAzureTargetContainer     archiveContainerName;
+    FolderName                  archiveFolderName;
+
+    NoYesId                     includeSubdirectories;
+    NoYesId                     archiveUnderSourceDirectory;
+    FilenameType                fileTypeFilter;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>newParameters</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiates the class from individual parameters
+    /// </summary>
+    /// <param name = "_keyVaultCertificateRef">The certificate</param>
+    /// <param name = "_inboundContainerName">The read container name</param>
+    /// <param name = "_archiveContainerName">The archive container name</param>
+    /// <param name = "_fileTypeFilter">The filetype to read</param>
+    /// <param name = "_postImportAction">What should happen after the import</param>
+    /// <param name = "_includeSubDirectories">Should we loop the subdirectories</param>
+    /// <param name = "_archiveUnderSubDirectory">Should the file be archived under the subdirectory</param>
+    /// <returns>The instantiated class</returns>
+    public static OMGAzureContainerReader newParameters(KeyVaultCertificateRef      _keyVaultCertificateRef,
+                                                        OMGAzureTargetContainer     _inboundContainerName,
+                                                        OMGAzureTargetContainer     _archiveContainerName,
+                                                        FilenameType                _fileTypeFilter,
+                                                        OMGPostImportAction         _postImportAction,
+                                                        NoYesId                     _includeSubDirectories      = NoYes::No,
+                                                        NoYesId                     _archiveUnderSubDirectory   = NoYes::No)
+    {
+        OMGAzureContainerReader     azureContainerReader = new OMGAzureContainerReader();
+        ;
+
+        azureContainerReader.parmKeyVaultCertificateRef(_keyVaultCertificateRef);
+        azureContainerReader.parmInboundContainerName(OMGFeatures::removeLastChar(_inboundContainerName, '/'));
+        azureContainerReader.parmArchiveContainerName(OMGFeatures::removeLastChar(_archiveContainerName, '/'));
+        azureContainerReader.parmIncludeSubdirectories(_includeSubDirectories);
+        azureContainerReader.parmArchiveUnderSourceDirectory(_archiveUnderSubDirectory);
+        azureContainerReader.parmFileTypeFilter(_fileTypeFilter);
+        azureContainerReader.parmPostImportAction(_postImportAction);
+
+        return azureContainerReader;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmKeyVaultCertificateRef</Name>
+				<Source><![CDATA[
+    public KeyVaultCertificateRef parmKeyVaultCertificateRef(KeyVaultCertificateRef _keyVaultCertificateRef = keyVaultCertificateRef)
+    {
+        keyVaultCertificateRef = _keyVaultCertificateRef;
+        return keyVaultCertificateRef;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmInboundContainerName</Name>
+				<Source><![CDATA[
+    public OMGAzureTargetContainer parmInboundContainerName(OMGAzureTargetContainer _inboundContainerName = inboundContainerName)
+    {
+        inboundContainerName = _inboundContainerName;
+        return inboundContainerName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPostImportAction</Name>
+				<Source><![CDATA[
+    public OMGPostImportAction parmPostImportAction(OMGPostImportAction _postImportAction = postImportAction)
+    {
+        postImportAction = _postImportAction;
+        return postImportAction;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmArchiveContainerName</Name>
+				<Source><![CDATA[
+    public OMGAzureTargetContainer parmArchiveContainerName(OMGAzureTargetContainer _archiveContainerName = archiveContainerName)
+    {
+        archiveContainerName = _archiveContainerName;
+        return archiveContainerName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmIncludeSubdirectories</Name>
+				<Source><![CDATA[
+    public NoYesId parmIncludeSubdirectories(NoYesId _includeSubdirectories = includeSubdirectories)
+    {
+        includeSubdirectories = _includeSubdirectories;
+        return includeSubdirectories;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmArchiveUnderSourceDirectory</Name>
+				<Source><![CDATA[
+    public NoYesId parmArchiveUnderSourceDirectory(NoYesId _archiveUnderSourceDirectory = archiveUnderSourceDirectory)
+    {
+        archiveUnderSourceDirectory = _archiveUnderSourceDirectory;
+        return archiveUnderSourceDirectory;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmFileTypeFilter</Name>
+				<Source><![CDATA[
+    public FilenameType parmFileTypeFilter(FilenameType _fileTypeFilter = fileTypeFilter)
+    {
+        fileTypeFilter = _fileTypeFilter;
+        return fileTypeFilter;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>buildFileHandleMap</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Builds a map of the file in the read container
+    /// </summary>
+    /// <returns>The file map</returns>
+    public Map buildFileHandleMap()
+    {
+        BlobItem                        blobItem;
+        System.Collections.IEnumerable  enumerable;
+        System.Collections.IEnumerator  enumerator;
+        FolderName                      inboundFolderName;
+        FolderName                      currentFolderName;
+        Map                             fileHandleMap           = new Map(Types::String, Types::Container);        
+        boolean                         isArchiveFolder;
+        ;
+
+        inboundFolderName   = con2Str(conDel(str2con(this.parmInboundContainerName(), '/'), 1, 1), '/');
+        archiveFolderName   = con2Str(conDel(str2con(this.parmArchiveContainerName(), '/'), 1, 1), '/');
+
+        container   tmpCont = str2con(this.parmInboundContainerName(), '/');
+        this.parmInboundContainerName(conPeek(tmpCont, 1));
+        blobContainerClient = this.getBlobServiceClient().GetBlobContainerClient(this.parmInboundContainerName());
+               
+        enumerable = blobContainerClient.getBlobs(BlobTraits::None, BlobStates::None, '', CancellationToken::None);
+
+        enumerator = enumerable.GetEnumerator();
+
+        if (enumerator)
+        {
+            while (enumerator.MoveNext())
+            {
+                blobItem = enumerator.current;
+                
+                currentFolderName = conPeek(fileNameSplit(blobItem.Name), 1);
+                
+                if (strScan(currentFolderName, '/', strLen(currentFolderName), -1))
+                {
+                    currentFolderName = strDel(currentFolderName, strLen(currentFolderName), -1);
+                }
+
+                // Check if currentFolderName is the archive folder
+                isArchiveFolder = false;
+                if (strScan(currentFolderName, archiveFolderName, 1, strLen(currentFolderName)))
+                {
+                    isArchiveFolder = true;
+                }
+
+                if (inboundFolderName)
+                {
+                    if (inboundFolderName == currentFolderName)
+                    {
+                        fileHandleMap = this.addFileToMap(fileHandleMap, blobItem);
+                    }
+                }
+                else
+                {
+                    // No specific inboundFolderName means we will read all folders except folders that match the archive folder name
+                    if (this.parmPostImportAction() != OMGPostImportAction::Archive || isArchiveFolder == false)
+                    {
+                        fileHandleMap = this.addFileToMap(fileHandleMap, blobItem);
+                    }
+                }
+            }
+        }
+        
+        return fileHandleMap;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getBlobServiceClient</Name>
+				<Source><![CDATA[
+    public BlobServiceClient getBlobServiceClient()
+    {
+        if (!blobServiceClient)
+        {
+            connectionstr       = KeyVaultCertificateHelper::getManualSecretValue(this.parmKeyVaultCertificateRef());
+            blobServiceClient   = new Azure.Storage.Blobs.BlobServiceClient(connectionstr);
+        }
+
+        return blobServiceClient;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>moveToArchiveFolder</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Moves a file to the archive folder
+    /// </summary>
+    /// <param name = "_blobClient">The _blobClient to move</param>
+    public void moveToArchiveFolder(BlobClient  _blobClient)
+    {
+        ;
+        
+        // Archive under source directory
+        if (archiveUnderSourceDirectory == NoYes::Yes)
+        {
+            FolderName      subDirArchiveName;
+            container       tmpCon = fileNameSplit(_blobClient.Name);
+        
+            subDirArchiveName = _blobClient.BlobContainerName + '/' + conPeek(tmpCon, 1) + archiveContainerName;
+            
+            this.copyFile(_blobClient, subDirArchiveName, true);
+                      
+        }
+        else if (archiveContainerName)
+        {
+            this.copyFile(_blobClient, archiveContainerName, true);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>deleteFile</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Deletes a file defines by a BlobClient
+    /// </summary>
+    /// <param name = "_blobClient">The BlobClient to delete</param>
+    public void deleteFile(BlobClient   _blobClient)
+    {        
+        BlobRequestConditions           blobRequestConditions   = new BlobRequestConditions();        
+        ;
+
+        _blobClient.DeleteIfExists(Azure.Storage.Blobs.Models.DeleteSnapshotsOption::None,
+                                   blobRequestConditions,
+                                   CancellationToken::None);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>addFileToMap</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Adds the blobItem to the map
+    /// </summary>
+    /// <param name = "_fileHandleMap">The map</param>
+    /// <param name = "_blobItem">The BlobItem to add</param>
+    /// <returns>The map</returns>
+    public Map addFileToMap(Map         _fileHandleMap,
+                            BlobItem    _blobItem)
+    {
+        BlobItemProperties              blobItemProperties;
+        BlobClient                      blobClient;
+        System.DateTimeOffset           modifiedValue;
+        utcdatetime                     modifiedUTCDateTime;
+        TransDate                       modifiedDate;
+        TimeOfDay                       modifiedTime;
+        str                             modifiedDateTimeString;
+        FilenameType                    fileType;
+        ;
+
+        fileType = conPeek(fileNameSplit(_blobItem.Name), 3);
+
+        if (!fileTypeFilter || fileTypeFilter == fileType)
+        {
+            blobItemProperties      = _blobItem.get_Properties();
+            modifiedValue           = blobItemProperties.get_LastModified();
+
+            modifiedUTCDateTime     = modifiedValue.get_DateTime();
+            modifiedDate            = DateTimeUtil::date(modifiedUTCDateTime);
+            modifiedTime            = DateTimeUtil::time(modifiedUTCDateTime);
+            modifiedDateTimeString  = date2Str(modifiedDate, 321, DateDay::Digits2, DateSeparator::Hyphen, DateMonth::Digits2, DateSeparator::Hyphen, DateYear::Digits4, DateFlags::None) +
+                                               ' ' +  time2Str(modifiedTime, TimeSeparator::Colon, TimeSeparator::Colon);
+                    
+            blobClient = blobContainerClient.GetBlobClient(_blobItem.Name);
+               
+            // Adding the blobClient and the modifiedValue as a container to the map
+            _fileHandleMap.add(modifiedDateTimeString + _blobItem.get_Name(), [blobClient, modifiedValue]);
+        }
+
+        return _fileHandleMap;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>copyFile</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Copies a file
+    /// </summary>
+    /// <param name = "_blobClient">The blobClient to copy</param>
+    /// <param name = "_targetContainerName">The destination</param>
+    /// <param name = "_deleteAfterCopy">Delete the source file after the copy?</param>
+    public void copyFile(BlobClient                 _blobClient,
+                         OMGAzureTargetContainer    _targetContainerName,
+                         boolean                    _deleteAfterCopy    = true)
+    {
+        BlockBlobClient         destinationBlockBlobClient;
+        BlobCopyFromUriOptions  options;                
+        str                     filepath;
+        str                     filename;
+        FilenameType            fileType;
+        ;
+
+        [filepath, filename, fileType]  = fileNameSplit(_blobClient.Name);
+        fileName                        = filename + fileType;
+        ;
+            
+        if (_targetContainerName)
+        {
+            options                     = new Azure.Storage.Blobs.Models.BlobCopyFromUriOptions();            
+            destinationBlockBlobClient  = new BlockBlobClient(connectionStr, _targetContainerName, filename);
+            destinationBlockBlobClient.StartCopyFromUri(_blobClient.Uri, options, CancellationToken::None);
+        }
+
+        if (_deleteAfterCopy == true)
+        {
+            this.deleteFile(_blobClient);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>postImportAction</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Archives or deletes the file depending on the setup in the data contract
+    /// </summary>
+    /// <param name = "_dataContract">The data contract</param>
+    /// <param name = "_blobClient">The blob client</param>
+    public void postImportAction(OMGInboundDataContract_Azure   _dataContract,
+                                 BlobClient                     _blobClient)
+    {
+        ;
+            
+        switch (_dataContract.parmPostImportAction())
+        {
+            case OMGPostImportAction::Archive   :
+                this.moveToArchiveFolder(_blobClient);
+                break;
+            case OMGPostImportAction::Delete    :
+                this.deleteFile(_blobClient);
+                break;
+            case OMGPostImportAction::NoAction  :
+                break;
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

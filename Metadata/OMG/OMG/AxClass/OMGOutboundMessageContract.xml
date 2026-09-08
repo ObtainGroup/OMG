@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundMessageContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Contract class representing the response when an outbound message is fetched
+/// </summary>
+[DataContract]
+public class OMGOutboundMessageContract
+{
+    OMGMessageGUID      messageGUID;
+    OMGMessageName      messageName;
+    str                 message;
+    boolean             base64Encoded;
+    DataAreaId          company;
+    FilenameType        filenameType;
+    boolean             more;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmFilenameType</Name>
+				<Source><![CDATA[
+    [DataMember('FilenameType')]
+    public FilenameType parmFilenameType(FilenameType    _filenameType = filenameType)
+    {
+        filenameType = _filenameType;
+        return filenameType;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmBase64Encoded</Name>
+				<Source><![CDATA[
+    [DataMember('Base64Encoded')]
+    public boolean parmBase64Encoded(boolean    _base64Encoded = base64Encoded)
+    {
+        base64Encoded = _base64Encoded;
+        return base64Encoded;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMessageGUID</Name>
+				<Source><![CDATA[
+    [DataMember('MessageGUID')]
+    public OMGMessageGUID parmMessageGUID(OMGMessageGUID    _messageGUID = messageGUID)
+    {
+        messageGUID = _messageGUID;
+        return messageGUID;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMessageName</Name>
+				<Source><![CDATA[
+    [DataMember('Name')]
+    public OMGMessageName parmMessageName(OMGMessageName    _messageName = messageName)
+    {
+        messageName = _messageName;
+        return messageName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMessage</Name>
+				<Source><![CDATA[
+    [DataMember('Message')]
+    public str parmMessage(str    _message = message)
+    {
+        message = _message;
+        return message;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCompany</Name>
+				<Source><![CDATA[
+    [DataMember('Company')]
+    public DataAreaId parmCompany(DataAreaId    _company = company)
+    {
+        company = _company;
+        return company;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMore</Name>
+				<Source><![CDATA[
+    [DataMember('More')]            
+    public boolean parmMore(boolean _more = more)
+    {
+        more = _more;
+
+        return more;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

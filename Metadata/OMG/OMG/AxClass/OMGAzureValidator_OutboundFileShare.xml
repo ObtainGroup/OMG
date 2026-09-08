@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGAzureValidator_OutboundFileShare</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Validation class for outbound to an azure fileshare
+/// </summary>
+class OMGAzureValidator_OutboundFileShare extends OMGAzureValidator_FileShare
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>validateOutboundFileShare</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validating the Azure components
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    public boolean validateOutboundFileShare()
+    {
+        OMGOutboundDataContract_AzureFileShare  dataContract = dataContract_Azure;
+        boolean                                 ret = true;
+        ;
+
+        if (!dataContract.parmFileShareName())
+        {
+            ret = checkFailed("@OMG:FileShareNameMissing");
+        }
+        if (!dataContract.parmTargetDirectory())
+        {
+            ret = checkFailed("@OMG:TargetDirectoryMissing");
+        }
+
+        if (ret)
+        {
+            ret = this.checkFileShareExist(dataContract.parmFileShareName());
+
+            if (ret)
+            {
+                ret = this.checkDirectoryExist(dataContract.parmTargetDirectory());
+            }
+        }
+
+        if (!dataContract.parmFileType())
+        {
+            ret = checkFailed("@OMG:FileTypeMissing");
+        }
+
+        if (!dataContract.parmFilenamePattern())
+        {
+            ret = checkFailed("@OMG:FilenamePatternMissing");
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Calls super, and if that is ok checks the outbound file share
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    public boolean validate()
+    {
+        boolean ret = super();
+
+        ret = ret && this.validateOutboundFileShare();
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

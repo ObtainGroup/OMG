@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGUploadSingleMessageController</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Controller class for the manual import of a single message
+/// </summary>
+class OMGUploadSingleMessageController extends SysOperationServiceController
+{
+    OMGInboundMessageTable  inboundMessageTable;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// A class entry point
+    /// </summary>
+    /// <param name = "_args">An instance of <c>Args</c> which contains calling arguments</param>
+    public static void main(Args _args)
+    {
+        OMGUploadSingleMessageController    controller;
+        OMGInboundMessageTable              inboundMessageTable;
+        ;
+
+        if (_args.menuItemName() == menuItemActionStr(OMGUploadSingleMessageOverwrite))
+        {
+            inboundMessageTable = _args.record();
+        }
+        
+        controller = new OMGUploadSingleMessageController(inboundMessageTable);
+                        
+        controller.startOperation();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Default class contsructor
+    /// </summary>
+    /// <param name = "_inboundMessageTable">The existing message in case we are overwriting</param>
+    protected void new(OMGInboundMessageTable   _inboundMessageTable = null)
+    {        
+        ;
+
+        this.parmInboundMessageTable(_inboundMessageTable);
+
+        super(classStr(OMGUploadSingleMessageService),
+              methodStr(OMGUploadSingleMessageService, process),
+              SysOperationExecutionMode::Synchronous);
+
+        if (_inboundMessageTable)
+        {
+            this.parmDialogCaption("@OMG:OverwriteMessage");
+        }
+        else
+        {
+            this.parmDialogCaption("@OMG:UploadSingleMessage");
+        }
+
+        this.showBatchTab(false); 
+        this.parmLoadFromSysLastValue(false);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmInboundMessageTable</Name>
+				<Source><![CDATA[
+    public OMGInboundMessageTable parmInboundMessageTable(OMGInboundMessageTable _inboundMessageTable = inboundMessageTable)
+    {
+        inboundMessageTable = _inboundMessageTable;
+    
+        return inboundMessageTable;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>startOperation</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Kicks off the operation
+    /// </summary>
+    /// <returns>The result of the operation</returns>
+    public SysOperationStartResult startOperation()
+    {
+        SysOperationStartResult         ret;
+        OMGUploadSingleMessageContract  dataContract;
+        ;
+        
+        dataContract = this.getDataContractObject();
+        dataContract.parmMessageGUID(inboundMessageTable.MessageGUID);
+        dataContract.parmBase64Encode(inboundMessageTable.Base64Encoded);
+        dataContract.parmMessageTypeId(inboundMessageTable.MessageTypeId);        
+        dataContract.parmMesageName(inboundMessageTable.MessageName);        
+        dataContract.parmCodePage(OMGMessageTypeTable::getInboundCodePage(inboundMessageTable.MessageTypeId));
+        
+        ret = super();
+    
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

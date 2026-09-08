@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundTransport</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Base class for uutbound transport
+/// </summary>
+abstract class OMGOutboundTransport extends SysOperationFrameworkService
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>processOperation</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Initializes the message type, and kicks off the processing
+    /// </summary>
+    /// <param name = "_dataContract">The data contract</param>
+    public void processOperation(OMGOutboundTransportContract _dataContract)
+    {
+        OMGMessageTypeTable                     messageTypeTable = OMGMessageTypeTable::find(_dataContract.parmMessageTypeId());        
+        
+        if (this.validateDataContract(messageTypeTable, this.dataContractClass()))
+        {
+            this.initMessageType(messageTypeTable);
+            this.doTransport(_dataContract);
+        }
+        else
+        {
+            throw Error("@OMG:FetchCancelled");
+        }        
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>doTransport</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Loops the outbound messages, and performs the actual transport
+    /// </summary>
+    /// <param name = "_dataContract">The data contract</param>
+    private void doTransport(OMGOutboundTransportContract _dataContract)
+    {
+        OMGOutboundMessageTable     outboundMessageTable;
+        OMGMessageTypeTable         messageTypeTable;
+        Counter                     processedCounter;
+        Counter                     errorCounter;
+        Set                         errorRecordSet  = new Set(Types::Int64);
+        TimeOfDay                   startTime       = DateTimeUtil::getTimeNow(DateTimeUtil::getUserPreferredTimeZone());
+        TimeOfDay                   endTime;
+        ;
+
+        while select outboundMessageTable
+            where outboundMessageTable.MessageTypeId    == _dataContract.parmMessageTypeId()    &&
+                  outboundMessageTable.MessageStatus    == OMGProcessingStatus::Ready
+        join messageTypeTable
+            where messageTypeTable.MessageTypeId        == outboundMessageTable.MessageTypeId
+        {
+            try
+            {
+                // Change company according to the message type
+                changecompany(outboundMessageTable.SourceCompany)
+                {
+                    if (this.processMessage(outboundMessageTable))
+                    {
+                        processedCounter++;
+                        OMGOutboundMessageTable::updateStatus(outboundMessageTable.RecId, messageTypeTable, OMGProcessingStatus::Processed);
+                    }
+                    else
+                    {
+                        errorCounter++;
+                        OMGOutboundMessageTable::updateStatus(outboundMessageTable.RecId, messageTypeTable, OMGProcessingStatus::Error);
+                    }
+                }
+            }
+            catch (Exception::Error)
+            {
+                errorCounter++;
+
+                OMGOutboundMessageTable::logError(outboundMessageTable.RecId, OMGFeatures::getErrorStr());
+
+                if (errorRecordSet.add(outboundMessageTable.RecId))
+                {
+                    retry;
+                }
+            }
+            catch (Exception::CLRError)
+            {
+                errorCounter++;
+                
+                System.Exception   clrException = ClrInterop::getLastException();
+
+                if (clrException)
+                {
+                    clrException = clrException.get_InnerException();
+                    
+                    if (clrException)
+                    {
+                        OMGOutboundMessageTable::logError(outboundMessageTable.RecId, clrException.ToString());
+                    }
+                }
+                else
+                {
+                    OMGOutboundMessageTable::logError(outboundMessageTable.RecId, OMGFeatures::getErrorStr());
+                }
+                if (errorRecordSet.add(outboundMessageTable.RecId))
+                {
+                    retry;
+                }
+            }
+        }
+        if (errorCounter)
+        {
+            error(strfmt("@OMG:RecordsProcessedWithErrors", errorCounter));
+        }
+
+        endTime = DateTimeUtil::getTimeNow(DateTimeUtil::getUserPreferredTimeZone());
+    
+        info(strFmt("@OMG:ProcessedMessagesInfo", processedCounter, endTime-startTime));        
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initMessageType</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Initializes the message type
+    /// </summary>
+    /// <param name = "_messageTypeTable">The message type record</param>
+    public abstract void initMessageType(OMGMessageTypeTable _messageTypeTable)
+    {
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dataContractClass</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Specifies the data contract class connected to the transport class
+    /// </summary>
+    /// <returns>ClassId of the data contract class</returns>
+    public abstract ClassId dataContractClass()
+    {
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processMessage</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Processes the ourbound message
+    /// </summary>
+    /// <param name = "_outboundMessageTable">The outbound message in question</param>
+    /// <returns>True if all ok</returns>
+    public abstract boolean processMessage(OMGOutboundMessageTable  _outboundMessageTable)
+    {
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>generateFilename</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Generates a filename based on setup and the message
+    /// </summary>
+    /// <param name = "_outboundMessageTable">Outbound message</param>
+    /// <param name = "_dataContract">Outbound data contract</param>
+    /// <returns>The filename</returns>
+    public Filename generateFilename(OMGOutboundMessageTable        _outboundMessageTable,
+                                     OMGOutboundDataContract_Azure  _dataContract)
+    {
+        return OMGOutboundMessageTable::generateFilename(_outboundMessageTable, _dataContract);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateDataContract</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates the parameters in the data contract
+    /// </summary>
+    /// <param name = "_messageTypeTable">The message type the data contract belongs to</param>
+    /// <param name = "_dataContractClassID">The id of the data contract class</param>
+    /// <returns>True if all ok</returns>
+    public boolean validateDataContract(OMGMessageTypeTable _messageTypeTable,
+                                        ClassId             _dataContractClassID)
+    {
+        SysDictClass    sysDictDataContractClass    = new SysDictClass(_dataContractClassId);
+        Object          parameterClassObject        = FormJsonSerializer::deserializeObject(_dataContractClassId, _messageTypeTable.OutboundSerializedParameterContract);
+        boolean         ret = true;
+        ;
+
+        if (sysDictDataContractClass.hasObjectMethod('validate'))
+        {
+            setPrefix(strFmt("@OMG:ValidatingParametersForMsgType", _messageTypeTable.MessageTypeId));
+            ret = sysDictDataContractClass.callObject('validate', parameterClassObject);
+
+            if (ret)
+            {
+                info("@OMG:AllParametersOk");
+            }
+        }
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

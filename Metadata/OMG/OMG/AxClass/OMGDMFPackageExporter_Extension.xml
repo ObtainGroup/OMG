@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGDMFPackageExporter_Extension</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Extension class for hooking into the DMF export
+/// </summary>
+[ExtensionOf(classStr(DMFPackageExporter))]
+final class OMGDMFPackageExporter_Extension
+{   
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>exportToFileV2</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Checks if there is a OMGMessageTypeId on the DMFDefinitionGroupEntity. If so, creates an outbound message
+    /// </summary>
+    /// <param name = "_definitionGroup">Data project</param>
+    /// <param name = "_executionId">Execution job reference</param>
+    /// <param name = "_entity">Entity name</param>
+    /// <param name = "_sourceFormat">Export format for file</param>
+    /// <param name = "_entitySyncVersion">List of entities with sync version range. Default is null as delta export runs with current sync version.</param>
+    /// <param name = "_previewCount">Preview count for export file.</param>
+    /// <returns>FileId for exported file.</returns>
+    public static SharedServiceUnitFileID exportToFileV2(DMFDefinitionGroupName _definitionGroup, 
+                                                         DMFExecutionId         _executionId, 
+                                                         DMFEntityName          _entity, 
+                                                         DMFSourceName          _sourceFormat, 
+                                                         Map                    _entitySyncVersion, 
+                                                         int                    _previewCount)
+    {
+        SharedServiceUnitFileID     sharedServiceUnitFileID;
+        DMFDefinitionGroupEntity    definitionGroupEntity;
+        ;
+                
+        sharedServiceUnitFileID = next exportToFileV2(_definitionGroup, _executionId, _entity, _sourceFormat, _entitySyncVersion, _previewCount);
+                
+        definitionGroupEntity = DMFDefinitionGroupEntity::find(_definitionGroup, _entity);
+
+        if (definitionGroupEntity.OMGMessageTypeId)
+        {
+            OMGDMFIntegration::createOutboundMessageFromFile(definitionGroupEntity, sharedServiceUnitFileID);
+        }
+                
+        return sharedServiceUnitFileID;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

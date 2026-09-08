@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxForm xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>OMGAzureFolderLookup</Name>
+	<SourceCode>
+		<Methods xmlns="">
+			<Method>
+				<Name>classDeclaration</Name>
+				<Source><![CDATA[
+[Form]
+public class OMGAzureFolderLookup extends FormRun
+{
+    str                         folderString;
+    str                         fileShareName;
+    KeyVaultCertificateRef      keyVaultCertificateRef;
+    OMGAzureFolderLookup        azureFolderLookup;
+
+}
+]]></Source>
+			</Method>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    /// <summary>
+    ///
+    /// </summary>
+    public void run()
+    {
+        if (azureFolderLookup.parmAzureFileShareName())
+        {
+            OMGAzureFolderLookup::buildFolderTree_AzureFileShare(FolderTreeControl,
+                                                                 azureFolderLookup.parmKeyVaultCertificateRef(),
+                                                                 azureFolderLookup.parmAzureFileShareName());
+        }
+        else
+        {
+            OMGAzureFolderLookup::buildFolderTree_AzureContainer(FolderTreeControl, azureFolderLookup.parmKeyVaultCertificateRef());
+        }
+        
+        super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>closeSelect</Name>
+				<Source><![CDATA[
+    /// <summary>
+    ///
+    /// </summary>
+    /// <param name = "_selectString"></param>
+    public void closeSelect(str _selectString)
+    {        
+        super(_selectString);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>setFileShareName</Name>
+				<Source><![CDATA[
+    public void setFileShareName(str    _fileShareName)
+    {
+        fileShareName = _fileShareName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>setKeyVaultCertificateRef</Name>
+				<Source><![CDATA[
+    public void setKeyVaultCertificateRef(KeyVaultCertificateRef _keyVaultCertificateRef)
+    {
+        keyVaultCertificateRef = _keyVaultCertificateRef;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    /// <summary>
+    ///
+    /// </summary>
+    public void init()
+    {
+        super();
+
+        azureFolderLookup = element.args().caller();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+		<DataSources xmlns="" />
+		<DataControls xmlns="">
+			<Control>
+				<Name>FolderTreeControl</Name>
+				<Type>Tree</Type>
+				<Methods>
+					<Method>
+						<Name>selectionChanged</Name>
+						<Source><![CDATA[
+        /// <summary>
+        /// Sets the folderString
+        /// </summary>
+        /// <param name = "_OldItem">The old item</param>
+        /// <param name = "_NewItem">The new item</param>
+        /// <param name = "_how">How should I know?</param>
+        public void selectionChanged(FormTreeItem _OldItem, FormTreeItem _NewItem, FormTreeSelect _how)
+        {
+            super(_OldItem, _NewItem, _how);
+
+            folderString = _NewItem.data();
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+			<Control>
+				<Name>OkButton</Name>
+				<Type>Button</Type>
+				<Methods>
+					<Method>
+						<Name>clicked</Name>
+						<Source><![CDATA[
+        /// <summary>
+        /// Calls the close select
+        /// </summary>
+        public void clicked()
+        {
+            super();
+
+            element.closeSelect(folderString);
+        }
+
+]]></Source>
+					</Method>
+				</Methods>
+			</Control>
+		</DataControls>
+		<Members xmlns="" />
+	</SourceCode>
+	<DataSources />
+	<Design>
+		<Caption xmlns="">@SYS88005</Caption>
+		<HeightMode xmlns="">SizeToContent</HeightMode>
+		<Pattern xmlns="">LookupGridOnly</Pattern>
+		<PatternVersion xmlns="">1.1</PatternVersion>
+		<Style xmlns="">Lookup</Style>
+		<WidthMode xmlns="">SizeToAvailable</WidthMode>
+		<Controls xmlns="">
+			<AxFormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>FormGroupControl1</Name>
+				<Pattern>CustomFilters</Pattern>
+				<PatternVersion>1.1</PatternVersion>
+				<Type>Group</Type>
+				<WidthMode>SizeToAvailable</WidthMode>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls />
+				<ArrangeMethod>HorizontalLeft</ArrangeMethod>
+				<FrameType>None</FrameType>
+				<Style>CustomFilter</Style>
+				<ViewEditMode>Edit</ViewEditMode>
+			</AxFormControl>
+			<AxFormControl xmlns=""
+				i:type="AxFormTreeControl">
+				<Name>FolderTreeControl</Name>
+				<AutoDeclaration>Yes</AutoDeclaration>
+				<Type>Tree</Type>
+				<FormControlExtension
+					i:nil="true" />
+			</AxFormControl>
+			<AxFormControl xmlns=""
+				i:type="AxFormGroupControl">
+				<Name>FormGroupControl2</Name>
+				<Type>Group</Type>
+				<WidthMode>SizeToAvailable</WidthMode>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl xmlns=""
+						i:type="AxFormButtonGroupControl">
+						<Name>FormButtonGroupControl1</Name>
+						<Type>ButtonGroup</Type>
+						<WidthMode>SizeToAvailable</WidthMode>
+						<FormControlExtension
+							i:nil="true" />
+						<Controls>
+							<AxFormControl xmlns=""
+								i:type="AxFormCommandButtonControl">
+								<Name>CancelButton</Name>
+								<Type>CommandButton</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<Command>Cancel</Command>
+								<SaveRecord>No</SaveRecord>
+							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormButtonControl">
+								<Name>OkButton</Name>
+								<Type>Button</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<Text>@SYS301992</Text>
+							</AxFormControl>
+						</Controls>
+						<ArrangeMethod>HorizontalRight</ArrangeMethod>
+						<Style>DialogCommitContainer</Style>
+					</AxFormControl>
+				</Controls>
+				<FrameType>None</FrameType>
+				<Style>DialogCommit</Style>
+			</AxFormControl>
+		</Controls>
+	</Design>
+	<Parts />
+</AxForm>

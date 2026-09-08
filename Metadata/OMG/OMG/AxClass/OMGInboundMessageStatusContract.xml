@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundMessageStatusContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Data contract containing number of records pr status
+/// </summary>
+[DataContract]
+public class OMGInboundMessageStatusContract
+{
+    OMGProcessingStatus status;
+    str     statusName;
+    int64   records;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmStatusName</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Read-only method returning status name
+    /// </summary>
+    /// <param name = "_statusName">Should not be populated</param>
+    /// <returns>the status name</returns>
+    [DataMember('Status')]
+    public str parmStatusName(str _statusName = statusName)
+    {
+        DictEnum dictEnum = new DictEnum(enumNum(OMGProcessingStatus));
+        statusName = dictEnum.value2Name(enum2int(status));
+        
+        return statusName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmStatus</Name>
+				<Source><![CDATA[
+    public OMGProcessingStatus parmStatus(OMGProcessingStatus _status = status)
+    {
+        status = _status;
+        return status;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmRecords</Name>
+				<Source><![CDATA[
+    [DataMember('Records')]
+    public int64 parmRecords(int64 _records = records)
+    {
+        records = _records;
+        return records;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

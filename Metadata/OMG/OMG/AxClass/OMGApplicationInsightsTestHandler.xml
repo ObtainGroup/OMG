@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGApplicationInsightsTestHandler</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// OMG Application Insights Test Handler
+/// </summary>
+public class OMGApplicationInsightsTestHandler implements OMGIInboundMessageHandler
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>processMessage</Name>
+				<Source><![CDATA[
+    public OMGInboundMessageResponseContract processMessage(OMGInboundMessageTable _inboundMessage)
+    {
+        System.Threading.Thread::Sleep(100);
+
+        OMGInboundMessageResponseContract response = new OMGInboundMessageResponseContract();
+        response.parmProcessed(true);
+        response.parmProcessedOk(true);
+        response.parmProcessingStatus(OMGProcessingStatus::Processed);
+        response.parmResponse(strFmt('%1 processed', _inboundMessage.MessageGUID));
+
+        return response;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateMessageTypeParameters</Name>
+				<Source><![CDATA[
+    public boolean validateMessageTypeParameters(OMGMessageTypeTable _messageTypeTable)
+    {
+        // Any validation issues should be written to the parmResponse method
+        return true;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

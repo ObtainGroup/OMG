@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGAzureValidator_InboundContainer</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+
+/// <summary>
+/// Validation class for inbound container
+/// </summary>
+class OMGAzureValidator_InboundContainer extends OMGAzureValidator
+{            
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>validateSourceContainer</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates the Azure components of inbound from azure container
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    protected boolean validateSourceContainer()
+    {
+        OMGInboundDataContract_AzureContainer   inboundDataContract = this.parmDataContract();
+        BlobContainerClient                     blobContainerClient;        
+        boolean                                 ret             = true;
+        ;
+
+        if (!inboundDataContract.parmSourceContainer())
+        {
+            ret = checkFailed("@OMG:SourceContainerMissing");
+        }
+                
+        if (ret)
+        {
+            // We can only check if the container part exists (not the directory part)
+            blobContainerClient = blobServiceClient.GetBlobContainerClient(inboundDataContract.parmSourceContainer());                                    
+            
+            if (!OMGFeatures::checkBlobContainerExist(blobContainerClient))
+            {
+                ret = checkFailed(strFmt("@OMG:SourceContainerDoesNotExist", inboundDataContract.parmSourceContainer()));
+            }                                    
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateArchiving</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates the archiving parameters
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    protected boolean validateArchiving()
+    {
+        OMGInboundDataContract_AzureContainer   inboundDataContract = this.parmDataContract();
+        BlobContainerClient                     blobContainerClient;
+        boolean                                 ret = true;
+        ;
+        
+        if (inboundDataContract.parmPostImportAction() == OMGPostImportAction::Archive && !inboundDataContract.parmArchiveContainer())
+        {
+            ret = checkFailed("@OMG:ArchiveContainerMissing");
+        }
+
+        if (ret)
+        {
+            if (inboundDataContract.parmPostImportAction() == OMGPostImportAction::Archive)
+            {
+                // We can only check if the container part exists (not the directory part)
+                blobContainerClient = blobServiceClient.GetBlobContainerClient(inboundDataContract.parmArchiveContainer());
+
+                if (!OMGFeatures::checkBlobContainerExist(blobContainerClient))
+                {
+                    ret = checkFailed(strFmt("@OMG:ArchiveContainerDoesNotExist", inboundDataContract.parmArchiveContainer()));
+                }
+            }
+        }
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Calls super and if that is ok, checks the source and archiving
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    public boolean validate()
+    {
+        boolean     ret     = super();
+        boolean     sourceOk;
+        boolean     archiveOk;
+        ;
+       
+        if (ret)
+        {
+            sourceOk   = this.validateSourceContainer();
+            archiveOk  = this.validateArchiving();            
+        }
+
+        return ret && sourceOk && archiveOk;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

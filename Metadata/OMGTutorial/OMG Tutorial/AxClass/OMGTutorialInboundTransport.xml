@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGTutorialInboundTransport</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+class OMGTutorialInboundTransport extends OMGInboundTransport
+{
+    Object                  dataContract;
+    OMGMessageTypeTable     messageTypeTable;
+    System.Object           credential;
+    Str1260                 ftpFileName;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>dataContractClass</Name>
+				<Source><![CDATA[
+    public ClassId dataContractClass()
+    {
+        return classNum(OMGTutorialInboundDataContract);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>doTransport</Name>
+				<Source><![CDATA[
+    public void doTransport(OMGInboundTransportContract _dataContract)
+    {
+        // Place your transport logic here                
+        ;
+
+        messageTypeTable    = OMGMessageTypeTable::find(_dataContract.parmMessageTypeId());
+        dataContract        = FormJsonSerializer::deserializeObject(this.dataContractClass(), messageTypeTable.InboundSerializedParameterContract) as OMGTutorialInboundDataContract;
+
+        credential          = new System.Net.NetworkCredential(dataContract.parmUserName() , dataContract.parmPassword());
+        ftpFileName         = dataContract.parmFtpServerAddress() + @"/" + "TestFile.txt";
+
+        this.uploadTestFile();
+
+        this.downloadTestFile();
+        
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>description</Name>
+				<Source><![CDATA[
+    public static Description description()
+    {
+        return "Tutorial transport class";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>uploadTestFile</Name>
+				<Source><![CDATA[
+    public void uploadTestFile()
+    {
+        System.Net.FtpWebRequest            ftpRequest;
+        System.Net.FtpWebResponse           ftpResponse;              
+        System.Object                       request;
+        System.Object                       response;
+        System.Byte[]                       bytes;               
+        System.IO.StreamReader              reader;
+        System.Text.Encoding                getUTF8;
+        System.IO.Stream                    requestStream;
+        System.IO.Stream                    fileStream = this.createStream();
+        ;
+        
+        request         = System.Net.WebRequest::Create(new System.Uri(ftpFileName));
+        ftpRequest      = request;
+        
+        fileStream.set_Position(0);
+
+        reader              = new System.IO.StreamReader(fileStream);
+        getUTF8             = System.Text.Encoding::get_UTF8();
+        bytes               = getUTF8.GetBytes(reader.ReadToEnd());
+
+        ftpRequest.set_Credentials(credential);
+        ftpRequest.set_ContentLength(bytes.get_Length());
+        ftpRequest.set_Method("STOR");
+ 
+        requestStream       = ftpRequest.GetRequestStream();
+        requestStream.Write(bytes,0,bytes.get_Length());
+        requestStream.Close();
+        response            = ftpRequest.GetResponse();
+        ftpResponse         = response;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createStream</Name>
+				<Source><![CDATA[
+    public System.IO.Stream createStream()
+    {        
+        TextStreamIo                textStreamIo;
+        OMGInboundMessageTable      inboundMessageTable;
+        ;
+
+        select firstonly inboundMessageTable;
+
+        if (inboundMessageTable)
+        {
+            textStreamIo = TextStreamIo::constructForWrite();
+            textStreamIo.write(inboundMessageTable.Message);
+        }
+
+        return textStreamIo.getStream();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>downloadTestFile</Name>
+				<Source><![CDATA[
+    public void downloadTestFile()
+    {               
+        System.Net.FtpWebRequest        ftpRequest;
+        System.Object                   request;        
+        System.IO.StreamReader          reader;        
+        System.Net.FtpWebResponse       response;        
+        str                             text;
+        ;
+         
+        try
+        {
+            request         = System.Net.WebRequest::Create(new System.Uri(ftpFileName));
+            ftpRequest      = request;
+             
+            ftpRequest.set_Credentials(credential);
+            response        = ftpRequest.GetResponse();
+            
+            reader          = new System.IO.StreamReader(response.GetResponseStream());
+            text            = reader.ReadToEnd();
+        }
+
+        catch
+        {
+            error("Something went wrong");
+        }
+        
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>messageCount</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Reurns the number of records (messages) fetched
+    /// </summary>
+    /// <returns>Number of messages</returns>
+    protected int64 messageCount()
+    {
+        return 1;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>messageSize</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Returns the total size of the messages fetched
+    /// </summary>
+    /// <returns>Size in bytes</returns>
+    protected int64 messageSize()
+    {
+        return 1;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

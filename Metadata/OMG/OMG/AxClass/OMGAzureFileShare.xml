@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGAzureFileShare</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Azure.Storage;
+using Azure.Storage.Files.Shares;
+using Azure.Storage.Files.Shares.Models;
+using System.Collections;
+using System.Threading;
+
+/// <summary>
+/// Base class for file operations on an Azure file share
+/// </summary>
+class OMGAzureFileShare
+{
+    KeyVaultCertificateRef      keyVaultCertificateRef;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>str2con</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Converts a string to a container and removes blank values
+    /// </summary>
+    /// <param name = "_string">The string</param>
+    /// <param name = "_sep">Separator</param>
+    /// <returns>A container</returns>
+    public static container str2con(str _string, 
+                                    str _sep)
+    {
+        container   orig =  str2con(_string, _sep);
+        container   ret;
+        int         i = 1;
+        while (i <= conLen(orig))
+        {
+            if (conPeek(orig, i) != '')
+            {
+                ret += conPeek(orig, i);
+            }
+            i++;
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getDirectory</Name>
+				<Source><![CDATA[
+    public static ShareDirectoryClient getDirectory(ShareClient _shareClient,
+                                                    str         _directory)
+    {
+        ShareDirectoryClient    shareDirectoryClient;
+       
+        shareDirectoryClient = _shareClient.GetDirectoryClient(_directory);
+       
+        return shareDirectoryClient;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmKeyVaultCertificateRef</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Method to get/set the vertificateRef
+    /// </summary>
+    /// <param name = "_keyVaultCertificateRef">The value to set</param>
+    /// <returns>The value</returns>
+    public KeyVaultCertificateRef parmKeyVaultCertificateRef(KeyVaultCertificateRef _keyVaultCertificateRef = keyVaultCertificateRef)
+    {
+        keyVaultCertificateRef = _keyVaultCertificateRef;
+        return keyVaultCertificateRef;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

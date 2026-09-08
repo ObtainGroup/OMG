@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGAzureValidator_InboundFileShare</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Validation class for inbound fileshare
+/// </summary>
+class OMGAzureValidator_InboundFileShare extends OMGAzureValidator_FileShare
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>validateInboundFileShare</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validating the Azure components
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    public boolean validateInboundFileShare()
+    {
+        OMGInboundDataContract_AzureFileShare   dataContract = dataContract_Azure;
+        boolean                                 ret = true;
+        ;
+
+        if (!dataContract.parmFileShareName())
+        {
+            ret = checkFailed("@OMG:FileShareNameMissing");
+        }
+            
+        if (!dataContract.parmSourceDirectory())
+        {
+            ret = checkFailed("@OMG:SourceDirectoryMissing");
+        }
+        
+
+        if (ret)
+        {
+            ret = this.checkFileShareExist(dataContract.parmFileShareName());
+
+            if (ret)
+            {               
+                ret = this.checkDirectoryExist(dataContract.parmSourceDirectory());
+            }            
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateArchiving</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates the archiving parameters
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    protected boolean validateArchiving()
+    {
+        OMGInboundDataContract_AzureFileShare   dataContract    = dataContract_Azure;
+        boolean                                 ret             = true;
+        ;
+        
+        if (dataContract.parmPostImportAction() == OMGPostImportAction::Archive && !dataContract.parmArchiveDirectory())
+        {
+            ret = checkFailed("@OMG:ArchiveDirectoryMissing");
+        }
+
+        if (ret && dataContract.parmPostImportAction() == OMGPostImportAction::Archive)
+        {
+            ret = this.checkDirectoryExist(dataContract.parmArchiveDirectory()) && ret;
+        }
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Call super, and if that is ok checks the inbound fileshare ans archiving
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    public boolean validate()
+    {
+        boolean     ret = super();
+        boolean     inboundOk;
+        boolean     archiveOk;
+        ;
+
+        if (ret)
+        {
+            inboundOk   = this.validateInboundFileShare();
+            archiveOk   = this.validateArchiving();
+        }
+
+        return ret && inboundOk && archiveOk;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

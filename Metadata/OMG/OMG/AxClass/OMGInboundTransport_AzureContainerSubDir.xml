@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundTransport_AzureContainerSubDir</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Transport class for importing messages from an Azure container including its sub-directories
+/// </summary>
+class OMGInboundTransport_AzureContainerSubDir extends OMGInboundTransport_AzureContainer
+{        
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>dataContractClass</Name>
+				<Source><![CDATA[
+    public ClassId dataContractClass()
+    {
+        return classNum(OMGInboundDataContract_AzureContainerSubDir);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>description</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Description of class
+    /// </summary>
+    /// <returns>The description</returns>
+    public static Description description()
+    {
+        return "@OMG:ImportFromAzureContainerSubDir";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>doTransport</Name>
+				<Source><![CDATA[
+    public void doTransport(OMGInboundTransportContract _transportContract)
+    {        
+        OMGMessageTypeTable                     messageTypeTable = OMGMessageTypeTable::find(_transportContract.parmMessageTypeId());        
+        str                                     archiveContainer;                
+        Map                                     fileMap;       
+        ;
+        
+        dataContract = FormJsonSerializer::deserializeObject(this.dataContractClass(), messageTypeTable.InboundSerializedParameterContract) as OMGInboundDataContract_AzureContainerSubDir;
+        
+        if (dataContract.parmArchiveUnderSubDir() == NoYes::Yes)
+        {
+            archiveContainer = dataContract.parmArchiveContainerName();
+        }
+        else
+        {
+            archiveContainer = dataContract.parmArchiveContainer();
+        }
+
+        azureContainerReader = OMGAzureContainerReader::newParameters(dataContract.parmKeyVaultCertificateRef(),
+                                                                      dataContract.parmSourceContainer(),
+                                                                      archiveContainer,
+                                                                      dataContract.parmFileTypeFilter(),
+                                                                      dataContract.parmPostImportAction(),
+                                                                      NoYes::Yes,
+                                                                      dataContract.parmArchiveUnderSubDir());                                                                      
+
+        fileMap = azureContainerReader.buildFileHandleMap();
+
+        this.processFileMap(fileMap, dataContract.parmCodePage(), messageTypeTable.MessageTypeId);
+               
+        info(strFmt("@OMG:MessagesFetched", messageTypeTable.MessageTypeId, messageCounter));
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

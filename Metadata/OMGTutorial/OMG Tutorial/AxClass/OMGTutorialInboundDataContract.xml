@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGTutorialInboundDataContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[DataContract]
+class OMGTutorialInboundDataContract extends OMGDataContract
+{
+    private name        ftpServerAddress;
+    private UserName    userName;
+    private name        password;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>validate</Name>
+				<Source><![CDATA[
+    public boolean validate()
+    {        
+        return OMGTutorialInboundValidator::newValidation(this).validate();     
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validationClassId</Name>
+				<Source><![CDATA[
+    public ClassId validationClassId()
+    {
+        // TODO We need a non azure validator class
+        // TODO Do we need this method? The validate method calls a specific class anyway....
+        return classNum(OMGTutorialInboundValidator);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmFtpServerAddress</Name>
+				<Source><![CDATA[
+    [DataMember, SysOperationDisplayOrder('1'), SysOperationLabel("FTP server")]
+    public Name parmFtpServerAddress(Name _ftpServerAddress = ftpServerAddress)
+    {
+        ftpServerAddress = _ftpServerAddress;
+        return ftpServerAddress;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmUserName</Name>
+				<Source><![CDATA[
+    [DataMember, SysOperationDisplayOrder('2')]
+    public UserName parmUserName(UserName _userName = userName)
+    {
+        userName = _userName;
+        return userName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPassword</Name>
+				<Source><![CDATA[
+    [DataMember, SysOperationDisplayOrder('3')]
+    public name parmPassword(Name _password = password)
+    {
+        password = _password;
+        return password;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

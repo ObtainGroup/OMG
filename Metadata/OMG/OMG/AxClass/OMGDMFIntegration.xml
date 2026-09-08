@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGDMFIntegration</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// OMG tools for integrating DMF
+/// </summary>
+class OMGDMFIntegration
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>createOutboundMessageFromFile</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Creates an outbound message from a file DMF created in the internal storage
+    /// </summary>
+    /// <param name = "_definitionGroupEntity">The definition group entity record</param>
+    /// <param name = "_sharedServiceUnitFileID">The Id of the file in the internal storage</param>
+    public static void createOutboundMessageFromFile(DMFDefinitionGroupEntity   _definitionGroupEntity,
+                                                     SharedServiceUnitFileID    _sharedServiceUnitFileID)                                                     
+    {
+        URL                     downloadUrl = DMFDataPopulation::getAzureBlobReadUrl(str2Guid(_sharedServiceUnitFileID));
+        System.IO.MemoryStream  stream      = File::UseFileFromURL(downloadUrl);        
+        System.Byte[]           bytes;
+        OMGOutboundMessageTable outboundMessageTable;
+        ;
+                                
+        bytes           = stream.ToArray();
+                                
+        outboundMessageTable.clear();
+        outboundMessageTable.initValue();
+        outboundMessageTable.MessageStatus  = OMGProcessingStatus::Ready;
+        outboundMessageTable.MessageName    = _definitionGroupEntity.Entity;
+        outboundMessageTable.MessageTypeId  = _definitionGroupEntity.OMGMessageTypeId;
+        outboundMessageTable.Message        = System.Convert::ToBase64String(bytes);
+        outboundMessageTable.Base64Encoded  = NoYes::Yes;
+        outboundMessageTable.SourceCompany  = curExt();
+        outboundMessageTable.MessageGUID    = str2Guid(_sharedServiceUnitFileID);
+        outboundMessageTable.SourceDateTime = DateTimeUtil::getSystemDateTime();
+        outboundMessageTable.FilenameType   = OMGDMFIntegration::getFileExtensionFromURL(downloadUrl);
+        outboundMessageTable.insert();
+
+        // Deleting the file from the internal storage space
+        OMGDMFIntegration::deleteTmpStorageFile(downloadUrl);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>deleteTmpStorageFile</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Deletes a file in the internal storage
+    /// </summary>
+    /// <param name = "_filePath">The path of the file</param>
+    public static void deleteTmpStorageFile(str _filePath)
+    {
+        System.Exception ex;
+
+        try
+        {
+            FileUploadTemporaryStorageResult result = new FileUploadTemporaryStorageResult('', '', false, '', '', _filePath);
+            result.deleteResult();
+        }
+        catch(ex)
+        {
+            Error(ex.InnerException.Message);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getFileExtensionFromURL</Name>
+				<Source><![CDATA[
+    public static str getFileExtensionFromURL(SharedServiceUnitURL sourcefile)
+    {
+        System.Uri  uri     = new System.Uri(sourcefile);
+        str         fileExt = '';
+        ;
+
+        if (uri != null)
+        {
+            fileExt = System.IO.Path::GetExtension(uri.LocalPath);
+        }
+
+        return fileExt;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

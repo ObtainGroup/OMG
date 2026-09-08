@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxSecurityDuty xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGMessageTypeTableMaintain</Name>
+	<Label>@OMG:MaintainMessageTypes</Label>
+	<Privileges>
+		<AxSecurityPrivilegeReference>
+			<Name>OMGMessageTypeTableMaintain</Name>
+		</AxSecurityPrivilegeReference>
+		<AxSecurityPrivilegeReference>
+			<Name>OMGInboundMessageTypeParametersMaintain</Name>
+		</AxSecurityPrivilegeReference>
+		<AxSecurityPrivilegeReference>
+			<Name>OMGOutboundMessageTypeParametersMaintain</Name>
+		</AxSecurityPrivilegeReference>
+		<AxSecurityPrivilegeReference>
+			<Name>OMGMessagetypeHandlerParameterMaintain</Name>
+		</AxSecurityPrivilegeReference>
+	</Privileges>
+</AxSecurityDuty>

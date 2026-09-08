@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGMessagetypeParameterDialog</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Class for building a dialog out of a data contract
+/// </summary>
+class OMGMessagetypeParameterDialog
+{
+    OMGMessageTypeTable             oMGMessageTypeTable;
+    OMGDirection                    direction;
+    SysDictClass                    sysDictDataContractClass;    
+    MethodName                      dataContractMethodName = 'dataContractClass';
+    Object                          dataContractObject;
+    ClassId                         dataContractClassId;
+    OMGSerializedParameterContract  serializedParameterContract;
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    public static void main(Args    _args)
+    {
+        OMGMessagetypeParameterDialog   messagetypeParameterDialog = OMGMessagetypeParameterDialog::construct();        
+        ;
+
+        messagetypeParameterDialog.parmOMGMessageTypeTable(_args.record());
+        messagetypeParameterDialog.parmDirection(_args.parmEnum());
+        messagetypeParameterDialog.run();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDirection</Name>
+				<Source><![CDATA[
+    public OMGDirection parmDirection(OMGDirection _direction = direction)
+    {
+        direction = _direction;
+        return direction;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmOMGMessageTypeTable</Name>
+				<Source><![CDATA[
+    public OMGMessageTypeTable parmOMGMessageTypeTable(OMGMessageTypeTable _oMGMessageTypeTable = oMGMessageTypeTable)
+    {
+        oMGMessageTypeTable = _oMGMessageTypeTable;
+        return oMGMessageTypeTable;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>construct</Name>
+				<Source><![CDATA[
+    public static OMGMessagetypeParameterDialog construct()
+    {
+        return new OMGMessagetypeParameterDialog();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Kicks off the building of the dialog, and updates the message type if the user hits ok on the dialog form
+    /// </summary>
+    public void run()
+    {
+        OMGContractUIBuilderBase    contractUIBuilder = OMGContractUIBuilderBase::construct();
+                
+        if (this.initContract())
+        {
+            contractUIBuilder.parmDataContractClassId(dataContractClassId);
+            contractUIBuilder.parmSerializedInputContract(serializedParameterContract);
+            if (contractUIBuilder.run())
+            {
+                this.updateMessageType(contractUIBuilder.getSerializedOutputContract());
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initContract</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Initializes the data contract connected to the transport handler class
+    /// </summary>
+    /// <returns>Trus if all ok</returns>
+    public boolean initContract()
+    {
+        ClassId         transportClassId;
+        SysDictClass    sysDictClass;
+        Object          messageHandlerObject;
+        boolean         ret;
+
+        if (direction == OMGDirection::Inbound)
+        {
+            transportClassId            = className2Id(oMGMessageTypeTable.InboundMessageTransportClass);
+            serializedParameterContract = oMGMessageTypeTable.InboundSerializedParameterContract;
+        }
+        else
+        {
+            transportClassId            = className2Id(oMGMessageTypeTable.OutboundMessageTransportClass);
+            serializedParameterContract = oMGMessageTypeTable.OutboundSerializedParameterContract;
+        }
+        if (transportClassId)
+        {
+            sysDictClass                    = new SysDictClass(transportClassId);
+            messageHandlerObject = sysDictClass.makeObject();
+            
+            if (sysDictClass.hasObjectMethod(dataContractMethodName))
+            {
+                dataContractClassId                 = sysDictClass.callObject(dataContractMethodName, messageHandlerObject);
+                sysDictDataContractClass            = new SysDictClass(dataContractClassId);
+                ret = true;
+            }
+        }
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateMessageType</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Updates the message type with the parameter contract values
+    /// </summary>
+    /// <param name = "_serializedParameterContract">The serialized parameter contract</param>
+    public void updateMessageType(OMGSerializedParameterContract  _serializedParameterContract)
+    {
+        OMGMessageTypeTable             oMGMessageTypeTableUpdate;
+
+        ttsbegin;
+
+        oMGMessageTypeTableUpdate = OMGMessageTypeTable::find(oMGMessageTypeTable.MessageTypeId, true);
+
+        if (oMGMessageTypeTableUpdate)
+        {
+
+            if (direction == OMGDirection::Outbound)
+            {
+                oMGMessageTypeTableUpdate.OutboundSerializedParameterContract = _serializedParameterContract;
+            }
+            else
+            {
+                oMGMessageTypeTableUpdate.InboundSerializedParameterContract  = _serializedParameterContract;
+            }
+            oMGMessageTypeTableUpdate.update();
+        }
+
+        ttscommit;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

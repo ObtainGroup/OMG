@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundMessageService</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Service class for exposing outbound messages
+/// </summary>
+public class OMGOutboundMessageService
+{
+    OMGMessageTypeTable                         messageTypeTable;
+    OMGOutboundDataContract_AzureContainer      dataContract;
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>getMessage</Name>
+				<Source><![CDATA[
+    public OMGOutboundMessageContract getMessage(OMGOutboundRequestContract _outboundRequestContract)
+    {
+        #OCCRetryCount
+        OMGOutboundMessageContract  outboundMessageContract = new OMGOutboundMessageContract();
+        OMGOutboundMessageTable     outboundMessageTable, outboundMessageTableMore;
+        System.Byte[]               byteArray;
+        DataAreaId                  company = _outboundRequestContract.parmCompany();
+        boolean                     base64Encode = true;
+
+        try
+        {
+            select firstonly outboundMessageTable
+                order by CreatedDateTime asc
+                where outboundMessageTable.MessageTypeId    == _outboundRequestContract.parmMessageTypeId()
+                &&    outboundMessageTable.MessageStatus    == OMGProcessingStatus::Ready
+                &&   (company                               == ''
+                ||    outboundMessageTable.SourceCompany    == company);
+
+            if (outboundMessageTable)
+            {
+                messageTypeTable    = OMGMessageTypeTable::find(outboundMessageTable.MessageTypeId);
+                // Initializing the datacontract with values from the message type serialized field
+                dataContract   = FormJsonSerializer::deserializeObject(classNum(OMGOutboundDataContract_AzureContainer), messageTypeTable.OutboundSerializedParameterContract);
+
+                outboundMessageContract.parmMessageGUID(outboundMessageTable.MessageGUID);
+                outboundMessageContract.parmMessageName(outboundMessageTable.MessageName);
+                outboundMessageContract.parmFilenameType(outboundMessageTable.FilenameType);
+
+                if (outboundMessageTable.Base64Encoded == NoYes::No && base64Encode)
+                {
+                    var plainTextBytes = System.Text.Encoding::GetEncoding(str2Int(dataContract.parmCodePage())).GetBytes(outboundMessageTable.Message);
+                    str baseStr = System.Convert::ToBase64String(plainTextBytes);
+
+                    byteArray = System.Convert::FromBase64String(baseStr);
+
+                    outboundMessageContract.parmMessage(System.Convert::ToBase64String(byteArray));
+                    outboundMessageContract.parmBase64Encoded(NoYes::Yes);
+                }
+                else
+                {
+                    outboundMessageContract.parmMessage(outboundMessageTable.Message);
+                    outboundMessageContract.parmBase64Encoded(NoYes::No);
+                }
+                if (_outboundRequestContract.parmAwaitAcknowledgement())
+                {
+                    OMGOutboundMessageTable::updateStatus(outboundMessageTable.RecId, OMGMessageTypeTable::find(outboundMessageTable.MessageTypeId),OMGProcessingStatus::PendingAcknowledgement);
+                }
+                else
+                {
+                    OMGOutboundMessageTable::updateStatus(outboundMessageTable.RecId, OMGMessageTypeTable::find(outboundMessageTable.MessageTypeId),OMGProcessingStatus::Processed);
+                }
+                select firstonly outboundMessageTableMore
+                    order by CreatedDateTime asc
+                    where outboundMessageTableMore.MessageTypeId    == _outboundRequestContract.parmMessageTypeId()
+                    &&    outboundMessageTableMore.MessageStatus    == OMGProcessingStatus::Ready
+                    &&   (company                                   == ''
+                    ||    outboundMessageTable.SourceCompany        == company);
+                if (outboundMessageTableMore)
+                {
+                    outboundMessageContract.parmMore(true);
+                }
+            }
+        }
+        catch (Exception::UpdateConflict)
+        {
+            if (appl.ttsLevel() == 0)
+            {
+                if (xSession::currentRetryCount() <= #RetryNum)
+                {
+                    retry;
+                }
+                else
+                {
+                    Error("@Retail:UpdateConflictNotRecovered");
+                }
+            }
+            else
+            {
+                throw Exception::UpdateConflict;
+            }
+        }
+
+        return outboundMessageContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>acknowledgeMessage</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Acknowledge the reception of an outbound message
+    /// </summary>
+    /// <param name = "_messageGUID">The message GUID</param>
+    /// <param name = "_acknowledge">Yes if received, No if not</param>
+    /// <param name = "_errorMessage">Error message if not received</param>
+    /// <returns>Yes, if message was found</returns>
+    public boolean acknowledgeMessage(OMGMessageGUID _messageGUID, boolean _acknowledge, OMGMessageErrorLog _errorMessage)
+    {
+        boolean                 ret;
+        OMGOutboundMessageTable outboundMessageTable;
+ 
+        outboundMessageTable = OMGOutboundMessageTable::find(_messageGUID, false);
+        if (outboundMessageTable)
+        {
+            if (_acknowledge)
+            {
+                OMGOutboundMessageTable::updateStatus(outboundMessageTable.RecId, OMGMessageTypeTable::find(outboundMessageTable.MessageTypeId), OMGProcessingStatus::Processed);
+            }
+            else
+            {
+                OMGOutboundMessageTable::logError(outboundMessageTable.RecId,  _errorMessage);
+            }
+            ret = true;
+        }
+        else
+        {
+            ret = false;
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getOutboundMessageTableStatus</Name>
+				<Source><![CDATA[
+    [AifCollectionTypeAttribute('return', Types::Class, classStr(OMGOutboundMessageStatusContract))]
+    public List getOutboundMessageTableStatus()
+    {
+        List                                statusList = new List(Types::Class);
+        OMGOutboundMessageStatusContract    outboundMessageStatusContract;
+        OMGOutboundMessageTable             outboundMessageTable;
+
+        while select count(RecId) from outboundMessageTable
+            group by MessageStatus
+        {
+            outboundMessageStatusContract = new OMGOutboundMessageStatusContract();
+            outboundMessageStatusContract.parmStatus(outboundMessageTable.MessageStatus);
+            outboundMessageStatusContract.parmRecords(outboundMessageTable.RecId);
+            statusList.addEnd(outboundMessageStatusContract);
+        }
+
+        return statusList;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

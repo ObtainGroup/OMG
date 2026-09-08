@@ -1,0 +1,894 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundMessageTable</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class OMGInboundMessageTable extends common
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>find</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Find a record
+    /// </summary>
+    /// <param name = "_messageGUID">The identifier</param>
+    /// <param name = "_forUpdate">Should the record be selected forupdate</param>
+    /// <returns>The record in question</returns>
+    public static OMGInboundMessageTable find(OMGMessageGUID    _messageGUID,
+                                              boolean           _forUpdate = false)
+    {
+        OMGInboundMessageTable      inboundMessageTable;
+        ;
+
+        inboundMessageTable.selectForUpdate(_forUpdate);
+
+        select firstonly inboundMessageTable
+            where inboundMessageTable.MessageGUID == _messageGUID;
+
+        return inboundMessageTable;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>findRecId</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Find a record
+    /// </summary>
+    /// <param name = "_recId">The RecId of the record to find</param>
+    /// <param name = "_forUpdate">Should the record be selected forupdate</param>
+    /// <returns>The record in question</returns>
+    public static OMGInboundMessageTable findRecId(RecId    _recId,
+                                                   boolean  _forUpdate = false)
+    {
+        OMGInboundMessageTable      inboundMessageTable;
+        ;
+
+        inboundMessageTable.selectForUpdate(_forUpdate);
+
+        select firstonly inboundMessageTable
+            where inboundMessageTable.RecId == _recId;
+
+        return inboundMessageTable;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>exist</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Checks if a record exists
+    /// </summary>
+    /// <param name = "_messageGUID">The identifier</param>
+    /// <returns>True if the record exists</returns>
+    public static boolean exist(OMGMessageGUID  _messageGUID)
+    {
+        return _messageGUID && (select firstonly RecId from OMGInboundMessageTable
+                                    where OMGInboundMessageTable.MessageGUID == _messageGUID).RecId != 0;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>logError</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Logs a processing error
+    /// </summary>
+    /// <param name = "_inboundMessageTableRecId">The RecId of the record in question</param>
+    /// <param name = "_errorLog">The error string</param>
+    public static void logError(RecId                   _inboundMessageTableRecId,
+                                OMGTransactionErrorLog  _errorLog)
+    {
+        OMGInboundMessageTable  inboundMessageTable;
+        ;
+
+        ttsbegin;
+
+        inboundMessageTable = OMGInboundMessageTable::findRecId(_inboundMessageTableRecId, true);
+
+        if (inboundMessageTable)
+        {
+            inboundMessageTable.MessageErrorLog  = _errorLog;
+            inboundMessageTable.MessageStatus    = OMGProcessingStatus::Error;
+            inboundMessageTable.update();
+        }
+
+        ttscommit;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>decodeMessage</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Decodes a base64 string
+    /// </summary>
+    /// <param name = "_base64EncodedMessage">The encoded string</param>
+    /// <returns>The decoded string</returns>
+    public static str decodeMessage(str _base64EncodedMessage)
+    {
+        var base64EncodedBytes = System.Convert::FromBase64String(_base64EncodedMessage);
+        return System.Text.Encoding::UTF8.GetString(base64EncodedBytes);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateMessage</Name>
+				<Source><![CDATA[
+    private OMGInboundMessageTable updateMessage(
+        OMGMessageTypeTable _messageTypeTable,
+        OMGInboundMessageResponseContract _inboundMessageResponseContract,
+        int _infologStart
+        )
+    {
+        OMGTransactionErrorLog errorLog;
+
+        ttsbegin;
+        // New
+        OMGInboundMessageTable inboundMessageTableUpdate = OMGInboundMessageTable::findRecId(this.RecId, true);
+        if (_inboundMessageResponseContract.parmProcessedOk() == true)
+        {
+            inboundMessageTableUpdate.MessageStatus = OMGProcessingStatus::Processed;
+        }
+        else
+        {
+            inboundMessageTableUpdate.MessageStatus = _inboundMessageResponseContract.parmProcessingStatus();
+        }
+        inboundMessageTableUpdate.MessageErrorLog = _inboundMessageResponseContract.parmResponse();
+        inboundMessageTableUpdate.ExecutionId       = _inboundMessageResponseContract.parmExecutionId();
+                        
+        if (inboundMessageTableUpdate.MessageStatus == OMGProcessingStatus::Error)
+        {
+            errorLog = OMGFeatures::getErrorStrSpecific(_infologStart);
+            errorLog += _inboundMessageResponseContract.parmResponse();
+            inboundMessageTableUpdate.MessageErrorLog = errorLog;
+        }
+
+        if (_messageTypeTable.RequestRetentionPeriod == 0 && inboundMessageTableUpdate.MessageStatus == OMGProcessingStatus::Processed)
+        {
+            inboundMessageTableUpdate.delete();
+        }
+        else
+        {
+            inboundMessageTableUpdate.update();
+        }
+        ttscommit;
+
+        return inboundMessageTableUpdate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processMessage</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Process a record in the inbound message table 
+    /// </summary>
+    /// <param name = "_inboundMessageTable">The record to process</param>
+    /// <returns>A response data contract</returns>
+    public static OMGInboundMessageResponseContract processMessage(OMGInboundMessageTable _inboundMessageTable)
+    {
+        OMGMessageTypeTable                 messageTypeTable    = OMGMessageTypeTable::find(_inboundMessageTable.MessageTypeId);
+        OMGInboundMessageResponseContract   response;
+        DataAreaId                          processingCompany   = _inboundMessageTable.Company ? _inboundMessageTable.Company : curExt();
+        ;
+                
+        changecompany(processingCompany)
+        {
+            if (messageTypeTable.ApplicationInsightLogging)
+            {
+                using (OMGApplicationInsightsProcess applInsProcess = OMGApplicationInsightsProcess::newMessageTypeId(messageTypeTable.MessageTypeId))
+                {
+                    response = OMGInboundMessageTable::processMessageInternal(_inboundMessageTable, messageTypeTable);
+                    _inboundMessageTable.reread(); 
+                    applInsProcess.addMessageId(guid2Str(_inboundMessageTable.MessageGUID));
+                    applInsProcess.addErrorMessage(_inboundMessageTable.MessageErrorLog);
+                    applInsProcess.addErrorCountProperty(_inboundMessageTable.MessageStatus == OMGProcessingStatus::Error ? 1 : 0);
+                }
+            }
+            else
+            {
+                response = OMGInboundMessageTable::processMessageInternal(_inboundMessageTable, messageTypeTable);
+            }
+        }
+
+        return response;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processMessageInternal</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Process a record in the inbound message table (internal method)
+    /// </summary>
+    /// <param name = "_inboundMessageTable">The record to process</param>
+    /// <param name = "_messageTypeTable">The message type</param>
+    /// <returns>A response data contract</returns>
+    private static OMGInboundMessageResponseContract processMessageInternal(OMGInboundMessageTable  _inboundMessageTable,
+                                                                            OMGMessageTypeTable     _messageTypeTable)
+    {
+        OMGMessageTypeTable                 messageTypeTable = _messageTypeTable;
+        OMGInboundMessageResponseContract   inboundMessageResponseContract = new OMGInboundMessageResponseContract();
+        OMGIInboundMessageHandler           iInboundMessageHandler;
+        OMGInboundMessageTable              inboundMessageTableUpdate;
+        SysDictClass                        sysDictClass;
+        OMGTransactionErrorLog              errorLog;
+        Set                                 errorRecordSet = new Set(Types::Int64);
+        int                                 infologStart;
+
+        try
+        {
+            infologStart = infologLine() + 1;
+            //infolog.clear();    // Clearing the infolog so that we only track message related to the actual record
+            
+            if (messageTypeTable)
+            {
+                sysDictClass = new SysDictClass(className2Id(messageTypeTable.InboundMessageHandlerClass));
+                if (sysDictClass)
+                {
+                    iInboundMessageHandler = sysDictClass.makeObject();
+
+                    if (iInboundMessageHandler && iInboundMessageHandler is OMGIInboundMessageHandler)
+                    {
+                        if (OMGInboundMessageTable::lockRecord(_inboundMessageTable.RecId))
+                        {
+                            inboundMessageResponseContract   = iInboundMessageHandler.processMessage(_inboundMessageTable);
+
+                            ttsbegin;
+                            // New
+
+                            inboundMessageTableUpdate = OMGInboundMessageTable::findRecId(_inboundMessageTable.RecId, true);
+                            if (inboundMessageResponseContract.parmProcessedOk() == true)
+                            {
+                                inboundMessageTableUpdate.MessageStatus = OMGProcessingStatus::Processed;
+                            }
+                            else
+                            {
+                                inboundMessageTableUpdate.MessageStatus = inboundMessageResponseContract.parmProcessingStatus();
+                            }
+                            inboundMessageTableUpdate.MessageErrorLog = inboundMessageResponseContract.parmResponse();
+                            inboundMessageTableUpdate.ExecutionId     = inboundMessageResponseContract.parmExecutionId();
+                        
+                            if (inboundMessageTableUpdate.MessageStatus == OMGProcessingStatus::Error)
+                            {
+                                errorLog = OMGFeatures::getErrorStrSpecific(infologStart);
+                                errorLog += inboundMessageResponseContract.parmResponse();
+                                inboundMessageTableUpdate.MessageErrorLog = errorLog;
+                            }
+
+                            if (messageTypeTable.RequestRetentionPeriod == 0 && inboundMessageTableUpdate.MessageStatus == OMGProcessingStatus::Processed)
+                            {
+                                inboundMessageTableUpdate.delete();
+                            }
+                            else
+                            {
+                                inboundMessageTableUpdate.update();
+                            }
+                            ttscommit;
+
+                        }
+                    }
+                }
+            }
+        }
+        
+        catch (Exception::Error)
+        {
+            OMGInboundMessageTable::logError(_inboundMessageTable.RecId, OMGFeatures::getErrorStrSpecific(infologStart));
+
+            if (errorRecordSet.add(_inboundMessageTable.RecId))
+            {
+                retry;
+            }
+        }
+        catch (Exception::CLRError)
+        {
+            OMGTransactionErrorLog errorLogLocal = AifUtil::getClrErrorMessage();
+
+            if (errorLogLocal)
+            {
+                OMGInboundMessageTable::logError(_inboundMessageTable.RecId, errorLogLocal);
+            }
+            else
+            {
+                OMGInboundMessageTable::logError(_inboundMessageTable.RecId, OMGFeatures::getErrorStrSpecific(infologStart));
+            }
+            if (errorRecordSet.add(_inboundMessageTable.RecId))
+            {
+                retry;
+            }
+        }
+
+        // Generic catch
+        catch
+        {
+            OMGInboundMessageTable::logError(_inboundMessageTable.RecId, OMGFeatures::getErrorStrSpecific(infologStart));
+        }
+
+        return inboundMessageResponseContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>insert</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Sets the SourceDateTime if not specified
+    /// </summary>
+    public void insert()
+    {
+        if (!this.Company)
+        {
+            // Defaulting the company from the message type
+            this.Company = OMGMessageTypeTable::find(this.MessageTypeId).Company;
+        }
+        
+        if (!this.SourceDateTime)
+        {
+            this.SourceDateTime = DateTimeUtil::getSystemDateTime();
+        }
+        
+        super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>update</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Checks if the message status changes from error to ready. If so, the errorLog field is cleared
+    /// </summary>
+    public void update()
+    {
+        OMGInboundMessageTable  inboundMessageTable_Orig = this.orig();
+        ;
+
+        if (inboundMessageTable_Orig.MessageStatus  == OMGProcessingStatus::Error    &&
+            this.MessageStatus                      == OMGProcessingStatus::Ready)
+        {
+            this.MessageErrorLog = '';
+        }
+
+        super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createInboundMessage</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Creates an outbound message
+    /// </summary>
+    /// <param name = "_messageName">The name of the message</param>
+    /// <param name = "_messageTypeId">The message type</param>
+    /// <param name = "_message">The message content</param>
+    /// <param name = "_base64Encoded">Is the content base64 encoded</param>
+    /// <param name = "_company">The company the message should be processed in</param>
+    /// <param name = "_messageGuid">The message GUIS</param>
+    /// <param name = "_sourceDateTime">The source date/time</param>
+    /// <returns>The created record</returns>
+    public static OMGInboundMessageTable createInboundMessage(OMGMessageName     _messageName,
+                                                              OMGMessageTypeId   _messageTypeId,
+                                                              OMGMessage         _message,
+                                                              NoYesId            _base64Encoded,
+                                                              DataAreaId         _company,
+                                                              OMGMessageGUID     _messageGuid    = newGuid(),
+                                                              OMGSourceDateTime  _sourceDateTime = DateTimeUtil::getSystemDateTime())
+    {
+        OMGInboundMessageTable  inboundMessageTable;
+        ;
+
+        inboundMessageTable.clear();
+        inboundMessageTable.initValue();
+        inboundMessageTable.MessageName     = _messageName;
+        inboundMessageTable.MessageStatus   = OMGProcessingStatus::Ready;
+        inboundMessageTable.MessageTypeId   = _messageTypeId;        
+        inboundMessageTable.Message         = _message;        
+        inboundMessageTable.Base64Encoded   = _base64Encoded;
+        inboundMessageTable.Company         = _company ? _company : curExt();
+        inboundMessageTable.MessageGUID     = _messageGuid;
+        inboundMessageTable.SourceDateTime  = _sourceDateTime;
+        inboundMessageTable.insert();
+
+        return inboundMessageTable;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>UpdateMessageStatus</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Updates the messagestatus on inbound messages in status 'Processing'
+    /// </summary>
+    /// <param name = "_messageTypeId">The message type to update</param>
+    public static void UpdateMessageStatus(OMGMessageTypeId     _messageTypeId)
+    {
+        OMGInboundMessageTable      inboundMessageTable;
+        DMFExecution                execution;
+        DMFExecutionSummaryStatus   executionSummaryStatus;
+        #OCCRetryCount
+        ;
+
+        // TODO This method needs to be updated if we begin using the executionId for other stuff than DMF
+        try
+        {
+            ttsbegin;
+           
+            while select forupdate inboundMessageTable
+                where inboundMessageTable.MessageTypeId == _messageTypeId   &&
+                      inboundMessageTable.MessageStatus == OMGProcessingStatus::Processing  &&
+                      inboundMessageTable.ExecutionId   != ''
+            {
+                execution = DMFExecution::find(inboundMessageTable.ExecutionId);
+
+                if (execution)
+                {
+                    // First we check to see if the definition group holds any errors. If so, we set the status on InboundMessage to error
+                    DMFDefinitionGroupExecution dMFDefinitionGroupExecution;
+
+                    select sum(StagingErrorCount), sum(TargetErrorCount) from dMFDefinitionGroupExecution
+                        where dMFDefinitionGroupExecution.ExecutionId       == execution.ExecutionId  &&
+                              dMFDefinitionGroupExecution.DefinitionGroup   == execution.DefinitionGroup;
+
+                    if (dMFDefinitionGroupExecution.StagingErrorCount || dMFDefinitionGroupExecution.TargetErrorCount)
+                    {
+                        inboundMessageTable.MessageStatus   = OMGProcessingStatus::Error;
+                        inboundMessageTable.MessageErrorLog = OMGInboundMessageTable::getDMFError(inboundMessageTable.ExecutionId, execution.DefinitionGroup);
+                    }
+                    else
+                    {
+                        executionSummaryStatus = execution.GetExecutionSummaryStatus();
+
+                        switch (executionSummaryStatus)
+                        {
+                            case DMFExecutionSummaryStatus::Failed  :
+                                inboundMessageTable.MessageStatus   = OMGProcessingStatus::Error;
+                                inboundMessageTable.MessageErrorLog = OMGInboundMessageTable::getDMFError(inboundMessageTable.ExecutionId, execution.DefinitionGroup);
+                                break;
+                            case DMFExecutionSummaryStatus::Succeeded :
+                                inboundMessageTable.MessageStatus = OMGProcessingStatus::Processed;
+                                break;
+                            case DMFExecutionSummaryStatus::PartiallySucceeded :
+                                inboundMessageTable.MessageStatus   = OMGProcessingStatus::Error;
+                                inboundMessageTable.MessageErrorLog += '\r\n' + "@OMG:DMFProcessingPartialSucess";
+                                break;
+                            case DMFExecutionSummaryStatus::Canceled :
+                                inboundMessageTable.MessageStatus   = OMGProcessingStatus::Error;
+                                inboundMessageTable.MessageErrorLog += '\r\n' + "@OMG:DMFProcessingCancelled";
+                                break;
+                        }
+                    }
+                }
+                else
+                {
+                    // If we cannot find the execution, we have to asume it ended ok
+                    inboundMessageTable.MessageStatus = OMGProcessingStatus::Processed;
+                }
+
+                inboundMessageTable.update();
+            }
+
+            ttscommit;
+        }
+
+        catch (Exception::UpdateConflict)
+        {
+            if (appl.ttsLevel() == 0)
+            {
+                if (xSession::currentRetryCount() >= #RetryNum)
+                {
+                    throw Exception::UpdateConflictNotRecovered;
+                }
+                else
+                {
+                    retry;
+                }
+            }
+            else
+            {
+                throw Exception::UpdateConflict;
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getDMFError</Name>
+				<Source><![CDATA[
+    public static OMGMessageErrorLog getDMFError(DMFExecutionId         _executionId,
+                                                 DMFDefinitionGroupName _definitionGroupName)
+    {
+        DMFStagingLog                       stagingLog;
+        OMGMessageErrorLog                  errorMessage;
+        ;
+
+        stagingLog = DMFStagingLog::find(_executionId);
+        if (stagingLog.logText())
+        {
+            errorMessage = stagingLog.logText() + '\r\n';
+        }
+
+        DMFStagingValidationLog     stagingValidationLog;
+        DictTable                   dictTable;
+        DictField                   dictField;
+        Common                      common;
+
+        while select stagingValidationLog
+            where stagingValidationLog.DefinitionGroupName  == _definitionGroupName   &&
+                  stagingValidationLog.ExecutionId          == _executionId
+        {
+            errorMessage += '\r\n';
+            errorMessage += strReplace(stagingValidationLog.ErrorMessage, '\n','');
+
+            // Get details from staging table
+            dictTable   = new DictTable(tableName2Id(stagingValidationLog.StagingTableName));
+            dictField   = new DictField(dictTable.id(), fieldName2Id(dictTable.id(), 'LineNumber'));
+
+            if (dictTable && dictField)
+            {
+                common      = dictTable.makeRecord();
+
+                select firstonly common
+                            where common.RecId == stagingValidationLog.StagingRecId;
+
+                if (common)
+                {
+                    errorMessage += strFmt('Line number %1', common.(dictField.id()));
+                }
+            }
+        }
+
+        return errorMessage;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getMemoryStream</Name>
+				<Source><![CDATA[
+    public static System.IO.MemoryStream getMemoryStream(OMGInboundMessageTable    _inboundMessage)
+    {
+        System.Byte[]           data;
+        System.Text.Encoding    encoding;
+        str                     decodedMessage;
+        System.Byte[]           byteArray;
+        OMGCodePage             codePage;
+        System.IO.MemoryStream  memoryStream;
+
+        codePage = OMGMessageTypeTable::getInboundCodePage(_inboundMessage.MessageTypeId);
+
+        encoding        = System.Text.Encoding::GetEncoding(str2Int(codePage));
+
+        if (_inboundMessage.Base64Encoded == NoYes::Yes)
+        {
+            data            = System.Convert::FromBase64String(_inboundMessage.Message);
+            decodedMessage  = encoding.GetString(data);
+        }
+        else
+        {
+            decodedMessage  = _inboundMessage.Message;
+        }
+                
+        byteArray       = encoding.GetBytes(decodedMessage);
+        memoryStream = new System.IO.MemoryStream(byteArray);
+
+        return memoryStream;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>lockRecord</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Sets the message processing status to "Processing" effectively locking it from other processing processes
+    /// </summary>
+    /// <param name = "_inboundMessageTableRecId">The RecId of the record to lock</param>
+    /// <returns>True if the lock was applied</returns>
+    public static boolean lockRecord(RecId  _inboundMessageTableRecId)
+    {                       
+        OMGInboundMessageTable  inboundMessageTable;
+        boolean                 lockOk = false;
+
+        ttsbegin;
+        inboundMessageTable = OMGInboundMessageTable::findRecId(_inboundMessageTableRecId, true);
+
+        if (inboundMessageTable && inboundMessageTable.MessageStatus == OMGProcessingStatus::Ready)
+        {
+            inboundMessageTable.MessageStatus    = OMGProcessingStatus::Processing;
+            inboundMessageTable.update();
+            lockOk = true;
+        }
+        ttscommit;
+
+        return lockOk;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<DeveloperDocumentation>@OMG:OMGInboundMessageTableDevDoc</DeveloperDocumentation>
+	<FormRef>OMGInboundMessageTable</FormRef>
+	<Label>@OMG:inboundMessages</Label>
+	<SubscriberAccessLevel>
+		<Read>Allow</Read>
+	</SubscriberAccessLevel>
+	<TableGroup>WorksheetLine</TableGroup>
+	<TitleField1>MessageName</TitleField1>
+	<CreatedBy>Yes</CreatedBy>
+	<CreatedDateTime>Yes</CreatedDateTime>
+	<ModifiedBy>Yes</ModifiedBy>
+	<ModifiedDateTime>Yes</ModifiedDateTime>
+	<OccEnabled>No</OccEnabled>
+	<ReplacementKey>MessageGUIDIdx</ReplacementKey>
+	<SaveDataPerCompany>No</SaveDataPerCompany>
+	<DeleteActions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>Message</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MessageErrorLog</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MessageGUID</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MessageName</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MessageStatus</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MessageTypeId</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Company</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>MessageGUID</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Error</Name>
+			<Label>@SYS8500</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>MessageErrorLog</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Message</Name>
+			<Label>@CLIInputs:Input_Message</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>Message</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MessageTypeId</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>MessageIdentification</Name>
+			<Label>@SYS5711</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>MessageStatus</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MessageTypeId</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MessageGUID</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MessageName</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>SourceDateTime</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Base64Encoded</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Company</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>ExecutionId</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>Message</Name>
+			<ExtendedDataType>OMGMessage</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>MessageErrorLog</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>OMGMessageErrorLog</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldGuid">
+			<Name>MessageGUID</Name>
+			<AllowEdit>No</AllowEdit>
+			<ExtendedDataType>OMGMessageGUID</ExtendedDataType>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>MessageName</Name>
+			<AllowEdit>No</AllowEdit>
+			<ExtendedDataType>OMGMessageName</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>MessageStatus</Name>
+			<EnumType>OMGProcessingStatus</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>MessageTypeId</Name>
+			<ExtendedDataType>OMGMessageTypeId</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>Company</Name>
+			<ExtendedDataType>DataAreaId</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldUtcDateTime">
+			<Name>SourceDateTime</Name>
+			<ExtendedDataType>OMGSourceDateTime</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>Base64Encoded</Name>
+			<ExtendedDataType>OMGBase64Encoded</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>ExecutionId</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>OMGExecutionId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes>
+		<AxTableIndex>
+			<Name>MessageGUIDIdx</Name>
+			<AlternateKey>Yes</AlternateKey>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>MessageGUID</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+		<AxTableIndex>
+			<Name>StatusCreatedSourceDateTimeIdx</Name>
+			<AllowDuplicates>Yes</AllowDuplicates>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>MessageStatus</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>CreatedDateTime</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>SourceDateTime</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+		<AxTableIndex>
+			<Name>TypeStatusIdx</Name>
+			<AllowDuplicates>Yes</AllowDuplicates>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>MessageTypeId</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>MessageStatus</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+		<AxTableIndex>
+			<Name>CreatedTypeStatusIdx</Name>
+			<AllowDuplicates>Yes</AllowDuplicates>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>CreatedDateTime</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>MessageTypeId</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>MessageStatus</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+		<AxTableIndex>
+			<Name>TypeCreatedStatusIdx</Name>
+			<AllowDuplicates>Yes</AllowDuplicates>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>MessageTypeId</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>CreatedDateTime</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>MessageStatus</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+	</Indexes>
+	<Mappings />
+	<Relations>
+		<AxTableRelation>
+			<Name>OMGMessageTypeTable</Name>
+			<Cardinality>ZeroMore</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>OMGMessageTypeTable</RelatedTable>
+			<RelatedTableCardinality>ExactlyOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>MessageTypeId</Name>
+					<Field>MessageTypeId</Field>
+					<RelatedField>MessageTypeId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+	</Relations>
+	<StateMachines />
+</AxTable>

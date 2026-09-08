@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundMessageFetchContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Data contract class for fetching messages
+/// </summary>
+[DataContract]
+class OMGInboundMessageFetchContract
+{
+    str         packedQuery;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmQuery</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Sets or gets a packed query object
+    /// </summary>
+    /// <param name = "_packedQuery">The packed query to set</param>
+    /// <returns>The packed query</returns>
+    [DataMemberAttribute, AifQueryTypeAttribute('_packedQuery', querystr(OMGMessageTypeTableQuery))]
+    public str parmQuery(str _packedQuery = packedQuery)
+    {
+        packedQuery = _packedQuery;
+        return packedQuery;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getQuery</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiates a query object from the packed query
+    /// </summary>
+    /// <returns>A query object</returns>
+    public Query getQuery()
+    {
+        return new Query(SysOperationHelper::base64Decode(packedQuery));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>setQuery</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Packs the query object
+    /// </summary>
+    /// <param name = "_query">The query to pack</param>
+    public void setQuery(Query _query)
+    {
+        packedQuery = SysOperationHelper::base64Encode(_query.pack());
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

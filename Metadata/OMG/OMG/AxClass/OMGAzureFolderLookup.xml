@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGAzureFolderLookup</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using System.Threading;
+using Azure.Storage.Files.Shares;
+using Azure.Storage.Files.Shares.Models;
+
+/// <summary>
+/// Class handling the lookup of folders in Azure
+/// </summary>
+class OMGAzureFolderLookup
+{
+    KeyVaultCertificateRef      keyVaultCertificateRef;
+    str                         azureFileShareName;
+
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmKeyVaultCertificateRef</Name>
+				<Source><![CDATA[
+    public KeyVaultCertificateRef parmKeyVaultCertificateRef(KeyVaultCertificateRef _keyVaultCertificateRef = keyVaultCertificateRef)
+    {
+        keyVaultCertificateRef = _keyVaultCertificateRef;
+
+        return keyVaultCertificateRef;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmAzureFileShareName</Name>
+				<Source><![CDATA[
+    public str parmAzureFileShareName(str _azureFileShareName = azureFileShareName)
+    {
+        azureFileShareName = _azureFileShareName;
+
+        return azureFileShareName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>construct</Name>
+				<Source><![CDATA[
+    public static OMGAzureFolderLookup construct()
+    {
+        return new OMGAzureFolderLookup();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>lookupAzureFolder</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiates the class, calls the parm methods and then the lookup
+    /// </summary>
+    /// <param name = "_formStringControl">The calling string control</param>
+    /// <param name = "_keyVaultCertificateRef">The KayVaultCertificateRef</param>
+    /// <param name = "_azureFileShareName">The Azure fileshare name</param>
+    public static void lookupAzureFolder(FormStringControl      _formStringControl,
+                                         KeyVaultCertificateRef _keyVaultCertificateRef,
+                                         str                    _azureFileShareName = '')
+    {
+        OMGAzureFolderLookup    azureFolderLookup = OMGAzureFolderLookup::construct();
+        ;
+
+        azureFolderLookup.parmKeyVaultCertificateRef(_keyVaultCertificateRef);
+        azureFolderLookup.parmAzureFileShareName(_azureFileShareName);
+
+        azureFolderLookup.lookup(_formStringControl);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>lookup</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Calls the lookup form
+    /// </summary>
+    /// <param name = "_formStringControl">The calling forms string control</param>
+    public void lookup(FormStringControl    _formStringControl)
+    {
+        Args    args = new Args();
+        FormRun formRun;
+        ;
+
+        args.name(formStr(OMGAzureFolderLookup));
+        args.caller(this);
+                
+        formRun = classFactory.formRunClass(args);
+        formRun.init();
+        
+        _formStringControl.performFormLookup(formRun);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>buildFolderTree_AzureFileShare</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Loops the folders and builds a tree
+    /// </summary>
+    /// <param name = "_formTreeControl">The tree control</param>
+    /// <param name = "_keyVaultCertificateRef">The KeyVaultCertificate</param>
+    /// <param name = "_azureFileShareName">The azure file share name</param>
+    /// <returns>The tree</returns>
+    public static FormTreeControl buildFolderTree_AzureFileShare(FormTreeControl        _formTreeControl,
+                                                             KeyVaultCertificateRef _keyVaultCertificateRef,
+                                                             str                    _azureFileShareName)
+    {
+        ShareClient             share   = new ShareClient(KeyVaultCertificateHelper::getManualSecretValue(_keyVaultCertificateRef), _azureFileShareName);
+        ShareDirectoryClient    rootDirectoryClient = share.GetRootDirectoryClient();
+        System.Collections.IEnumerable  enumerable;
+        Set                             folderSet = new Set(Types::String);
+        FormTreeControl                 folderTree = _formTreeControl;
+        TreeItemIdx                     treeItemIdx;
+        ;
+ 
+        Set loopDirectories(Set                             _folderSet,
+                        System.Collections.IEnumerable  _enumerable,
+                        TreeItemIdx                     _treeItemIdx,
+                        ShareDirectoryClient            _shareDirectoryClient)
+        {
+            System.Collections.IEnumerator  directoryEnumerator;
+            ShareFileItem                   shareFileItem;
+ 
+            directoryEnumerator = _enumerable.GetEnumerator();
+ 
+            while (directoryEnumerator.MoveNext())
+            {
+                shareFileItem = directoryEnumerator.Current;
+                if (shareFileItem.IsDirectory)
+                {
+                    ShareDirectoryClient subDirectoryClient = _shareDirectoryClient.GetSubdirectoryClient(shareFileItem.Name);
+                    System.Uri  uri = subDirectoryClient.Uri;
+                    str     foldername  = uri.ToString();
+                    int     pos         = strScan(foldername, '/', strLen(foldername), -255);
+                    foldername          = subStr(foldername, pos+1, strLen(foldername));
+                    treeItemIdx = SysFormTreeControl::addTreeItem(_formTreeControl, foldername, _treeItemIdx, uri.localPath);
+                    loopDirectories(_folderSet, subDirectoryClient.GetFilesAndDirectories(null, CancellationToken::None), treeItemIdx, subDirectoryClient);
+                }
+ 
+        
+            }
+            return _folderSet;
+        }
+ 
+        if (rootDirectoryClient.Exists(CancellationToken::None))
+        {
+            enumerable = rootDirectoryClient.GetFilesAndDirectories(null, CancellationToken::None);
+            if (enumerable)
+            {
+                folderSet = loopDirectories(folderSet, enumerable, FormTreeAdd::Root, rootDirectoryClient);
+            }
+        }
+        SysFormTreeControl::expandTree(folderTree, folderTree.getRoot(), 255);
+        return folderTree;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>buildFolderTree_AzureContainer</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Builds a tree control of Azure containers
+    /// </summary>
+    /// <param name = "_formTreeControl">The tree control</param>
+    /// <param name = "_keyVaultCertificateRef">The KayVaultCertificateRef</param>
+    /// <returns>The tree control</returns>    
+    public static FormTreeControl buildFolderTree_AzureContainer(FormTreeControl        _formTreeControl,
+                                                                 KeyVaultCertificateRef _keyVaultCertificateRef)
+    {
+        FormTreeControl                 folderTree          = _formTreeControl;
+        str                             connectionstr       = KeyVaultCertificateHelper::getManualSecretValue(_keyVaultCertificateRef);        
+        BlobServiceClient               blobServiceClient   = new Azure.Storage.Blobs.BlobServiceClient(connectionstr);
+        BlobContainerClient             blobContainerClient;
+        BlobContainerItem               blobContainerItem;
+        BlobItem                        blobItem;        
+        System.Collections.IEnumerable  containerEnumerable;
+        System.Collections.IEnumerator  containerEnumerator;
+        System.Collections.IEnumerable  blobEnumerable;
+        System.Collections.IEnumerator  blobEnumerator;
+        Set                             folderSet = new Set(Types::String);
+        TreeItemIdx                     treeItemIdx;
+        ;
+        
+        containerEnumerable = blobServiceClient.GetBlobContainers(BlobTraits::None,
+                                                                  BlobStates::None,
+                                                                  '',
+                                                                  CancellationToken::None);
+
+        containerEnumerator = containerEnumerable.GetEnumerator();
+
+        if (containerEnumerator)
+        {
+            while (containerEnumerator.moveNext())
+            {
+                treeItemIdx = FormTreeAdd::Root;
+
+                blobContainerItem = containerEnumerator.Current;
+                                        
+                if (folderSet.add(blobContainerItem.Name))
+                {
+                    treeItemIdx = SysFormTreeControl::addTreeItem(_formTreeControl, blobContainerItem.Name, treeItemIdx, blobContainerItem.Name);
+                }
+
+                blobContainerClient = blobServiceClient.GetBlobContainerClient(blobContainerItem.Name);
+
+                if (blobContainerClient)
+                {
+                    
+                    blobEnumerable  = blobContainerClient.GetBlobs(BlobTraits::None,
+                                                                   BlobStates::None,
+                                                                   '',
+                                                                   CancellationToken::None);
+                    
+                    
+                    blobEnumerator = blobEnumerable.GetEnumerator();
+
+                    if (blobEnumerator)
+                    {
+                        while (blobEnumerator.MoveNext())
+                        {
+                            blobItem = blobEnumerator.current;
+                            str     path = conPeek(fileNameSplit(blobItem.Name), 1);
+                            
+                            if (path && folderSet.add(path))
+                            {
+                                treeItemIdx = SysFormTreeControl::addTreeItem(_formTreeControl, path, treeItemIdx, path);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+                
+        SysFormTreeControl::expandTree(folderTree, folderTree.getRoot(), 255);
+
+        return folderTree;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

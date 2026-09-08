@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundMessageProcessService</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Service class for processing inbound messages
+/// </summary>
+class OMGInboundMessageProcessService extends SysOperationServiceBase
+{
+    BatchHeader                     batchHeader;
+    SysOperationServiceController   parentTask;
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>processOperation</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Loops query. Creates batch tasks per type (if in batch). Otherwise executes the handler class
+    /// </summary>
+    /// <param name = "_contract">The data contract with the query</param>
+    public void processOperation(OMGInboundMessageProcessContract _contract)
+    {
+        QueryRun                    queryRun = new QueryRun(_contract.getQuery());
+        OMGMessageTypeTable         messageTypeTable;                
+        OMGInboundMessageHandler    messageHandler;
+        DataAreaId                  processingCompany;
+        ;
+
+        // If the processing contract holds any entries in the parmRecordContainer, it means that it was called from the form
+        if (_contract.parmRecordCon() != conNull())
+        {
+            this.processSelectedRecords(_contract.parmRecordCon());
+        }
+        else
+        {
+            while (queryRun.next())
+            {
+                messageTypeTable = queryRun.get(tableNum(OMGMessageTypeTable));
+            
+                if (messageTypeTable.InboundMessageHandlerClass)
+                {
+                    processingCompany   = messageTypeTable.company ? messageTypeTable.company : curExt();
+                    messageHandler      = this.createMessageHandler(messageTypeTable);
+                    
+                    if (messageHandler)
+                    {
+                        changecompany(processingCompany)
+                        {
+                            if (this.isExecutingInBatch())
+                            {
+                                if (!batchHeader)
+                                {
+                                    batchHeader= this.getCurrentBatchHeader();
+                                }
+                                this.createBatchTask(messageHandler, messageTypeTable.MessageTypeId, _contract.parmRecordCon());
+                            }
+                            else
+                            {
+                                OMGProcessingContract      processingContract = new OMGProcessingContract();
+                            
+                                processingContract.parmMessageTypeId(messageTypeTable.MessageTypeId);
+                                processingContract.parmRecordContainer(_contract.parmRecordCon());
+                                messageHandler.processOperation(processingContract);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (batchHeader)
+            {
+                batchHeader.save();
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createMessageHandler</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Creates a message handler from the type
+    /// </summary>
+    /// <param name = "_messageTypeTable">The message type in question</param>
+    /// <returns>The instantiated message handler</returns>
+    public OMGInboundMessageHandler createMessageHandler(OMGMessageTypeTable    _messageTypeTable)
+    {
+        OMGInboundMessageHandler    messageHandler;
+        SysDictClass                sysDictClass;
+        Object                      dictHandler;
+        ;
+
+        sysDictClass = new SysDictClass(className2Id(_messageTypeTable.InboundMessageHandlerClass));
+                
+        if (sysDictClass)
+        {
+            dictHandler      = sysDictClass.makeObject();
+
+            if (dictHandler is OMGInboundMessageHandler)
+            {
+                messageHandler = dictHandler as OMGInboundMessageHandler;
+            }
+            else
+            {
+                if (sysDictClass.isImplementing(classname2id(classStr(OMGIInboundMessageHandler))))
+                {
+                    messageHandler     = new OMGInboundMessageHandler();
+                }
+                else
+                {
+                    error(strFmt("@OMG:DoesNotImplement", _messageTypeTable.InboundMessageHandlerClass, classStr(OMGIInboundMessageHandler)));                    
+                }
+            }
+        }
+
+        return messageHandler;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createBatchTask</Name>
+				<Source><![CDATA[
+    private void createBatchTask(OMGInboundMessageHandler   _messageHandler,
+                                 OMGMessageTypeId           _messageTypeId,
+                                 container                  _recordCon)
+    {
+        SysOperationServiceController   serviceController;
+        OMGProcessingContract           processingContract;
+
+        serviceController = new SysOperationServiceController(classId2Name(classIdGet(_messageHandler)),
+                                                              'processOperation',
+                                                              SysOperationExecutionMode::Synchronous);
+        
+        serviceController.parmLoadFromSysLastValue(false); // Don't use SysLastValue (so no values will be retrieved and no one will be stored)
+                
+        processingContract = serviceController.getDataContractObject();
+        processingContract.parmMessageTypeId(_messageTypeId);
+        processingContract.parmRecordContainer(_recordCon);
+
+        batchHeader.addRuntimeTask(serviceController, this.getCurrentBatchTask().RecId);
+        
+        serviceController.batchInfo().parmCaption(strFmt("@OMG:ProcessInboundMessageType", _messageTypeId));
+
+        if (parentTask)
+        {
+            batchHeader.addDependency(serviceController, parentTask, BatchDependencyStatus::FinishedOrError);
+        }
+
+        parentTask = serviceController;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processSelectedRecords</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Processes selected records (only relevant when called from the form)
+    /// </summary>
+    /// <param name = "_inboundMessageContainer">A countainer of InboundMessage RecId's'</param>
+    public void processSelectedRecords(container    _inboundMessageContainer)
+    {        
+        OMGMessageTypeTable         messageTypeTable;
+        OMGInboundMessageHandler    messageHandler;
+        DataAreaId                  processingCompany;        
+        MapEnumerator               mapEnumerator;
+        ;
+                
+        mapEnumerator = this.createMessageTypeBundleMap(_inboundMessageContainer).getEnumerator();
+
+        if (mapEnumerator)
+        {
+            while (mapEnumerator.moveNext())
+            {
+                messageTypeTable = OMGMessageTypeTable::find(mapEnumerator.current());
+
+                
+                if (messageTypeTable.InboundMessageHandlerClass)
+                {
+                    messageHandler = this.createMessageHandler(messageTypeTable);
+
+                    processingCompany   = messageTypeTable.company ? messageTypeTable.company : curExt();
+
+                    changecompany(processingCompany)
+                    {
+                        OMGProcessingContract      processingContract = new OMGProcessingContract();
+                            
+                        processingContract.parmMessageTypeId(messageTypeTable.MessageTypeId);
+                        processingContract.parmRecordContainer(mapEnumerator.currentValue());
+                        messageHandler.processOperation(processingContract);
+                    }
+                }
+            }
+        }        
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createMessageTypeBundleMap</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Creates a map of message type/container with inbound message RecId's'
+    /// </summary>
+    /// <param name = "_inboundMessageContainer">A container with the selected inbound messages</param>
+    /// <returns>The map</returns>
+    public Map createMessageTypeBundleMap(container _inboundMessageContainer)
+    {
+        Counter                 counter;
+        Map                     messageTypeMap = new Map(Types::String, Types::Container); // MessageTypeId, container with inbound message RecId's'
+        OMGInboundMessageTable  inboundMessageTable;
+        OMGMessageTypeTable     messageTypeTable;
+        ;
+
+        // Bundle per type
+        for (counter=1; counter<=conLen(_inboundMessageContainer); counter++)
+        {
+            inboundMessageTable = OMGInboundMessageTable::findRecId(conPeek(_inboundMessageContainer, counter));
+
+            if (inboundMessageTable && inboundMessageTable.MessageStatus == OMGProcessingStatus::Ready)
+            {
+                messageTypeTable = OMGMessageTypeTable::find(inboundMessageTable.MessageTypeId);
+
+                if (messageTypeTable)
+                {
+                    if (messageTypeTable.Active)
+                    {
+                        if (messageTypeTable.InboundMessageHandlerClass)
+                        {
+                            container   recIdCont;
+
+                            if (messageTypeMap.exists(inboundMessageTable.MessageTypeId))
+                            {
+                                recIdCont = messageTypeMap.lookup(inboundMessageTable.MessageTypeId);
+                            }
+
+                            recIdCont = conIns(recIdCont, conLen(recIdCont)+1, inboundMessageTable.RecId);
+                            messageTypeMap.add(inboundMessageTable.MessageTypeId, recIdCont);
+                        }
+                        else
+                        {
+                            error(strFmt("@OMG:MissingInboundHandlerClass", messageTypeTable.MessageTypeId));
+                        }
+                    }
+                    else
+                    {
+                        Error(strFmt("@OMG:MessageTypeNotActive", messageTypeTable.MessageTypeId));
+                    }
+                }
+                else
+                {
+                    Error(strFmt("@OMG:MessageTypeDoesNotExist", inboundMessageTable.MessageTypeId));
+                }
+            }
+            else
+            {
+                Error(strFmt("@OMG:MessageNotInStatusReady", inboundMessageTable.MessageGUID));
+            }
+        }
+
+        return messageTypeMap;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

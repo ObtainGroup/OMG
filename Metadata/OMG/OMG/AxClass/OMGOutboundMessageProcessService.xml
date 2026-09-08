@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundMessageProcessService</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Service class for processing outbound messages
+/// </summary>
+class OMGOutboundMessageProcessService extends SysOperationServiceBase
+{
+    BatchHeader                     batchHeader;
+    SysOperationServiceController   parentTask;
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>processOperation</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Processes the outbound messages
+    /// </summary>
+    /// <param name = "_contract">The calling data contract</param>
+    public void processOperation(OMGOutboundMessageProcessContract _contract)
+    {   
+        OMGMessageTypeTable                     messageTypeTable;
+        OMGOutboundTransport                    outboundTransport;
+        SysDictClass                            sysDictClass;        
+        DataAreaId                              company;
+        Counter                                 processedCounter;        
+        Counter                                 errorCounter;                
+        QueryRun                                queryRun        = new QueryRun(_contract.getQuery());
+        TimeOfDay                               startTime       = DateTimeUtil::getTimeNow(DateTimeUtil::getUserPreferredTimeZone());
+        TimeOfDay                               endTime;
+        ;
+
+        while (queryRun.next())
+        {
+            messageTypeTable     = queryRun.get(tableNum(OMGMessageTypeTable));
+            if (messageTypeTable.OutboundMessageTransportClass)
+            {
+                sysDictClass = new SysDictClass(className2Id(messageTypeTable.OutboundMessageTransportClass));
+                
+                if (sysDictClass)
+                {
+                    outboundTransport     = sysDictClass.makeObject();
+                    
+                    company = this.getParameterCompany(messageTypeTable, outboundTransport.dataContractClass());
+                    if (!company)
+                    {
+                        company = messageTypeTable.Company ? messageTypeTable.Company : curExt();
+                    }
+                   
+                    changecompany(company)
+                    {
+                        if (this.isExecutingInBatch())
+                        {
+                            if (!batchHeader)
+                            {
+                                batchHeader= this.getCurrentBatchHeader();
+                            }
+                            this.createBatchTask(sysDictClass, messageTypeTable.MessageTypeId);
+                        }
+                        else
+                        {
+                            OMGOutboundTransportContract  dataContract = new OMGOutboundTransportContract();
+                            dataContract.parmMessageTypeId(messageTypeTable.MessageTypeId);
+                            outboundTransport.processOperation(dataContract);                            
+                        }
+                    }
+                }
+            }
+        }
+
+        if (batchHeader)
+        {
+            batchHeader.save();
+        }
+        if (errorCounter)
+        {
+            error(strfmt("@OMG:RecordsProcessedWithErrors", errorCounter));
+        }
+
+        endTime = DateTimeUtil::getTimeNow(DateTimeUtil::getUserPreferredTimeZone());
+    
+        if (processedCounter)
+        {
+            info(strFmt("@OMG:ProcessedMessagesInfo", processedCounter, endTime-startTime));
+        }
+           
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createBatchTask</Name>
+				<Source><![CDATA[
+    private void createBatchTask(SysDictClass       _sysDictClass,
+                                 OMGMessageTypeId   _messageTypeId)
+    {
+        SysOperationServiceController       serviceController;
+        OMGOutboundTransportContract        dataContract;
+        ;
+
+        serviceController = new SysOperationServiceController(_sysDictClass.name(),
+                                                              'processOperation',
+                                                              SysOperationExecutionMode::Synchronous);
+        
+        serviceController.parmLoadFromSysLastValue(false); // Don't use SysLastValue (so no values will be retrieved and no one will be stored)
+        
+        dataContract = serviceController.getDataContractObject();
+        dataContract.parmMessageTypeId(_messageTypeId);
+                
+        batchHeader.addRuntimeTask(serviceController, this.getCurrentBatchTask().RecId);
+        
+        serviceController.batchInfo().parmCaption(strFmt("@OMG:ProcessingOutMessageType", _messageTypeId));
+
+        if (parentTask)
+        {
+            batchHeader.addDependency(serviceController, parentTask, BatchDependencyStatus::FinishedOrError);
+        }
+
+        parentTask = serviceController;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getParameterCompany</Name>
+				<Source><![CDATA[
+    public DataAreaId getParameterCompany(OMGMessageTypeTable   _messageTypeTable,
+                                          ClassId               _parameterContractClassID)
+    {
+        SysDictClass    sysDictDataContractClass    = new SysDictClass(_parameterContractClassID);
+        Set             methodSet                   = sysDictDataContractClass.methods(true, false, true);
+        SetEnumerator   methodSetEnumerator;
+        SysDictMethod   sysDictMethod;
+        DataAreaId      parameterCompany;
+        Object          parameterClassObject;
+        ;
+    
+        if (methodSet)
+        {
+            methodSetEnumerator = methodSet.getEnumerator();
+
+            while (methodSetEnumerator.moveNext())
+            {
+                sysDictMethod = methodSetEnumerator.current();
+                   
+                if (sysDictMethod && sysDictMethod.isPatternMethodParm() && sysDictMethod.getAttribute(classStr(OMGContractDataAreaIdAttribue)))
+                {
+                    parameterClassObject    = FormJsonSerializer::deserializeObject(_parameterContractClassID, _messageTypeTable.OutboundSerializedParameterContract);
+                    parameterCompany        = sysDictDataContractClass.callObject(sysDictMethod.name(),parameterClassObject);
+                }
+            }
+        }
+        
+        return parameterCompany;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

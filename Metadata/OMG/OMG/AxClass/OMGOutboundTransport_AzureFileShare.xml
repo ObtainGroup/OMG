@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundTransport_AzureFileShare</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Outbound transport to Azure fileshare
+/// </summary>
+class OMGOutboundTransport_AzureFileShare extends OMGOutboundTransport
+{
+    OMGMessageTypeTable                             messageTypeTable;
+    OMGOutboundDataContract_AzureFileShare          dataContract;
+    OMGAzureFileShareWriter                         azureFileShareWriter;
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>dataContractClass</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Specifies the contract class holding the parameters
+    /// </summary>
+    /// <returns>The contract class</returns>
+    public ClassId dataContractClass()
+    {
+        return classNum(OMGOutboundDataContract_AzureFileShare);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>description</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// The class description
+    /// </summary>
+    /// <returns>The class description</returns>
+    public static Description description()
+    {
+        return "@OMG:UploadFilesToAzureFileShare";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initMessageType</Name>
+				<Source><![CDATA[
+    public void initMessageType(OMGMessageTypeTable _messageTypeTable)
+    {
+        messageTypeTable    = _messageTypeTable;
+        // Initializing the datacontract with values from the message type serialized field
+        dataContract    = FormJsonSerializer::deserializeObject(classNum(OMGOutboundDataContract_AzureFileShare), messageTypeTable.OutboundSerializedParameterContract);
+        if (dataContract.parmTargetDirectory() && dataContract.parmKeyVaultCertificateRef())
+        {
+            azureFileShareWriter = OMGAzureFileShareWriter::newFromDataContract(dataContract);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processMessage</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Uploads the message to Azure
+    /// </summary>
+    /// <param name = "_outboundMessageTable">The message to upload to Azure</param>
+    /// <returns>A response contract</returns>
+    public boolean processMessage(OMGOutboundMessageTable  _outboundMessageTable)
+    {                
+        System.Byte[]                                   byteArray;
+        Filename                                        filename;
+        boolean                                         processedOk;
+                           
+        filename        = this.generateFilename(_outboundMessageTable, dataContract); 
+
+        if (azureFileShareWriter)
+        {       
+            if (_outboundMessageTable.Base64Encoded == NoYes::No)
+            {
+                var plainTextBytes = System.Text.Encoding::GetEncoding(str2Int(dataContract.parmCodePage())).GetBytes(_outboundMessageTable.Message);
+                str baseStr = System.Convert::ToBase64String(plainTextBytes);
+
+                byteArray = System.Convert::FromBase64String(baseStr);
+            }
+            else
+            {
+                byteArray = System.Convert::FromBase64String(_outboundMessageTable.Message);
+            }
+            
+            using(System.IO.MemoryStream memoryStream = new System.IO.MemoryStream(byteArray))
+            {
+                processedOk = azureFileShareWriter.writeFile(memoryStream, filename, strRem(_outboundMessageTable.TargetDirectory, '/') );                
+            }
+        }
+        
+        return processedOk;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

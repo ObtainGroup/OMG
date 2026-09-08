@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundTransport_AzureContainer</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Azure.Storage;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using System.Threading;
+using System.Threading.Tasks;
+
+/// <summary>
+/// Handler class for importing files from an Azure container
+/// </summary>
+class OMGInboundTransport_AzureContainer extends OMGInboundTransport
+{
+    OMGAzureContainerReader     azureContainerReader;
+    Object                      dataContract;
+    int                         messageCounter;
+    OMGMessageTypeId            messageTypeId;
+    int64                       messageSize;
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>messageCount</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Return numbner of messages feched
+    /// </summary>
+    /// <returns>Duh</returns>
+    protected int64 messageCount()
+    {
+        return messageCounter;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>messageSize</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Returns the total size of the messages fetched
+    /// </summary>
+    /// <returns>Size in bytes</returns>
+    protected int64 messageSize()
+    {
+        return messageSize;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dataContractClass</Name>
+				<Source><![CDATA[
+    public ClassId dataContractClass()
+    {
+        return classNum(OMGInboundDataContract_AzureContainer);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>setMessageTypeId</Name>
+				<Source><![CDATA[
+    public OMGMessageTypeId setMessageTypeId(OMGMessageTypeId   _messageTypeId)
+    {
+        messageTypeId = _messageTypeId;
+
+        return messageTypeId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>doTransport</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Imports the files
+    /// </summary>
+    /// <param name = "_dataContract">Data contract holding the messageTypeId</param>    
+    public void doTransport(OMGInboundTransportContract _dataContract)
+    {                
+        OMGMessageTypeTable                     messageTypeTable = OMGMessageTypeTable::find(_dataContract.parmMessageTypeId());
+        Map                                     fileMap;
+        ;
+        
+        dataContract = FormJsonSerializer::deserializeObject(this.dataContractClass(), messageTypeTable.InboundSerializedParameterContract) as OMGInboundDataContract_AzureContainer;
+
+        if (dataContract && dataContract.parmSourceContainer() && dataContract.parmKeyVaultCertificateRef())
+        {
+            azureContainerReader = OMGAzureContainerReader::newParameters(dataContract.parmKeyVaultCertificateRef(), 
+                                                                          dataContract.parmSourceContainer(), 
+                                                                          dataContract.parmArchiveContainer(),
+                                                                          dataContract.parmFileTypeFilter(),
+                                                                          dataContract.parmPostImportAction());
+            fileMap = azureContainerReader.buildFileHandleMap();
+            this.processFileMap(fileMap, dataContract.parmCodePage(), messageTypeTable.MessageTypeId);
+        }
+        else
+        {
+            Error(strFmt("@OMG:FaultyMessageTypeParameters", messageTypeTable.MessageTypeId));
+        }  
+      
+        info(strFmt("@OMG:MessagesFetched", messageTypeTable.MessageTypeId, messageCounter));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processFileMap</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Imports the files in the map
+    /// </summary>
+    /// <param name = "_fileMap">The map og files</param>
+    /// <param name = "_codePage">The codepage in the files</param>
+    /// <param name = "_messageTypeId">The message type</param>
+    public void processFileMap(Map              _fileMap,
+                               DMFCodePage      _codePage,
+                               OMGMessageTypeId _messageTypeId)
+    {
+        MapEnumerator   mapEnumerator = _fileMap.getEnumerator();
+        OMGMessage      oMGMessage;
+        BlobClient      blobClient;
+        container       valueContainer; //BlobClient, modifiedValue
+        ;
+                        
+        while (mapEnumerator.moveNext())
+        {
+            valueContainer = mapEnumerator.currentValue();
+                          
+            blobClient = conPeek(valueContainer, 1);
+                      
+            if (blobClient)
+            {                
+                oMGMessage = this.readSingleFile(blobClient, _codePage);
+
+                this.generateInboundMessage(oMGMessage, blobClient, _messageTypeId, conPeek(valueContainer, 2));
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>generateInboundMessage</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Generates records in the inbound message table based on the file map
+    /// </summary>
+    /// <param name = "_message">The message content</param>
+    /// <param name = "_blobClient">The BlobClient to read</param>
+    /// <param name = "_messageTypeId">The message type</param>
+    /// <param name = "_modifiedValue">The modified date/time</param>
+    public void generateInboundMessage(OMGMessage               _message,
+                                       BlobClient               _blobClient,
+                                       OMGMessageTypeId         _messageTypeId,
+                                       System.DateTimeOffset    _modifiedValue)
+    {            
+        OMGInboundMessageTable  inboundMessageTable;
+
+        try
+        {
+            ttsbegin;            
+            
+            inboundMessageTable = OMGInboundMessageTable::createInboundMessage(_blobClient.Name,
+                                                                               _messageTypeId, 
+                                                                               _message, 
+                                                                               dataContract.parmBase64Encode(),
+                                                                               OMGMessageTypeTable::find(_messageTypeId).Company, 
+                                                                               newGuid(), 
+                                                                               _modifiedValue.get_DateTime());
+            
+            
+            // Handles the post import action (Archive/Delete/NoAction)            
+            azureContainerReader.postImportAction(dataContract, _blobClient);
+            
+            ttscommit;
+
+            this.onInboundMessageInserted(inboundMessageTable);
+
+            messageCounter++;
+            messageSize += strLen(_message);
+        }
+
+        catch (Exception::Error)
+        {                        
+            throw Error("@ElectronicReporting:ImportCancelled");
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>readSingleFile</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Reads the file in the cloud block blob, and creates a list with the content
+    /// </summary>
+    /// <param name = "_blobClient">The BlobClient read</param>
+    /// <param name = "_codePage">The codepage to use when reading the file</param>
+    /// <returns>A list with the content</returns>
+    public System.String readSingleFile(BlobClient      _blobClient,
+                                        DMFCodePage     _codePage = '850')
+    {
+        System.IO.StreamReader      streamReader;
+        System.String               line;                
+        ;
+        
+        if (dataContract.parmBase64Encode())
+        {   
+            System.IO.MemoryStream memoryStream = new System.IO.MemoryStream();            
+            streamReader    = new System.IO.StreamReader(_blobClient.OpenRead(null, CancellationToken::None), true);
+            System.IO.Stream baseStream = streamReader.BaseStream;
+            baseStream.CopyTo(memoryStream);
+            System.Byte[] bytes = memoryStream.ToArray();
+            
+            line = System.Convert::ToBase64String(bytes);  
+            memoryStream.Dispose();          
+        }
+        else
+        {            
+            streamReader    = new System.IO.StreamReader(_blobClient.OpenRead(null, CancellationToken::None),
+                                                         System.Text.Encoding::GetEncoding(str2Int(_codePage)));
+            
+            line            = streamReader.ReadToEnd();                                    
+        }
+
+        if (streamReader)
+        {
+            streamReader.Close();
+            streamReader.Dispose();
+        }
+        return line;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>description</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Description of class
+    /// </summary>
+    /// <returns>The description</returns>
+    public static Description description()
+    {
+        return "@OMG:ImportFilesFromAzureContainers";
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

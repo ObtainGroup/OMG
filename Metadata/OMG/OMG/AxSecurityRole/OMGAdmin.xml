@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxSecurityRole xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGAdmin</Name>
+	<Label>@OMG:OMGAdmin</Label>
+	<DirectAccessPermissions />
+	<Duties>
+		<AxSecurityDutyReference>
+			<Name>OMGInboundMessageTableChangeStatus</Name>
+		</AxSecurityDutyReference>
+		<AxSecurityDutyReference>
+			<Name>OMGInboundMessageTableMaintain</Name>
+		</AxSecurityDutyReference>
+		<AxSecurityDutyReference>
+			<Name>OMGOutboundMessageProcessControllerExecute</Name>
+		</AxSecurityDutyReference>
+		<AxSecurityDutyReference>
+			<Name>OMGOutboundMessageTableMaintain</Name>
+		</AxSecurityDutyReference>
+		<AxSecurityDutyReference>
+			<Name>OMGMessageTypeTableMaintain</Name>
+		</AxSecurityDutyReference>
+		<AxSecurityDutyReference>
+			<Name>OMGInboundMessageFetchControllerExecute</Name>
+		</AxSecurityDutyReference>
+		<AxSecurityDutyReference>
+			<Name>OMGMessageTableCleanupControllerExecute</Name>
+		</AxSecurityDutyReference>
+		<AxSecurityDutyReference>
+			<Name>OMGUploadSingleMessageNew</Name>
+		</AxSecurityDutyReference>
+		<AxSecurityDutyReference>
+			<Name>OMGUploadSingleMessageOverwrite</Name>
+		</AxSecurityDutyReference>
+	</Duties>
+	<Privileges />
+	<SubRoles />
+</AxSecurityRole>

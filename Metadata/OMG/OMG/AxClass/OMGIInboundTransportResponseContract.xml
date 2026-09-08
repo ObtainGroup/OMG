@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGIInboundTransportResponseContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Response data contract used when fetching messages
+/// </summary>
+[DataContract]
+class OMGIInboundTransportResponseContract
+{
+    int messagesFetched;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmMessagesFetched</Name>
+				<Source><![CDATA[
+    [DataMember]
+    public int parmMessagesFetched(int _messagesFetched = messagesFetched)
+    {
+        messagesFetched = _messagesFetched;
+
+        return messagesFetched;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

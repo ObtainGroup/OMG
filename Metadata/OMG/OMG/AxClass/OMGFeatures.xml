@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGFeatures</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Azure.Storage;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using System.Collections;
+
+using Azure.Storage.Files.Shares;
+using Azure.Storage.Files.Shares.Models;
+using System.Threading;
+
+/// <summary>
+/// General feature class for OMG
+/// </summary>
+class OMGFeatures
+{    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>removeLastChar</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Removes the last specific character of a string
+    /// </summary>
+    /// <param name = "_string">The string in question</param>
+    /// <param name = "_charToRemove">The char to remove at the end</param>
+    /// <returns>The formatted string</returns>
+    public static str removeLastChar(str    _string,
+                                     str    _charToRemove)
+    {
+        str     string = _string;
+        ;
+
+        if (strScan(string, _charToRemove, strLen(string), -1))
+        {
+            string = strDel(string, strLen(string), -1);
+        }
+        return string;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>removeFirstChar</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Removes the first specific character of a string
+    /// </summary>
+    /// <param name = "_string">The string in question</param>
+    /// <param name = "_charToRemove">The char to remove at the start of the string</param>
+    /// <returns>The formatted string</returns>
+    public static str removeFirstChar(str    _string,
+                                      str    _charToRemove)
+    {
+        str     string = _string;
+        ;
+
+        if (strScan(string, _charToRemove, 1, 1))
+        {
+            string = strDel(string, 1, 1);
+        }
+        return string;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>ensureLastChar</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Ensures the presence of a specific last char 
+    /// </summary>
+    /// <param name = "_string">The string in question</param>
+    /// <param name = "_char">The char to ensure</param>
+    /// <returns>The formatted string</returns>
+    public static str ensureLastChar(str    _string,
+                                     str    _char)
+    {
+        str     string = _string;
+        ;
+
+        if (!strScan(string, _char, strLen(string), -1))
+        {
+            string = string + _char;
+        }
+
+        return string;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getErrorStrSpecific</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Gets a specific error string from the infolog
+    /// </summary>
+    /// <param name = "_infologStart">The line number</param>
+    /// <returns>The error string</returns>
+    public static str getErrorStrSpecific(int   _infologStart)
+    {
+        str         error;
+        Counter     currentLine;
+        ;
+
+        for(currentLine = _infologStart; currentLine <= infologLine(); currentLine++)
+        {
+            error += infolog.text(currentLine) + '\n';
+        }
+               
+        return error;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getErrorStr</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Gets the last error from the infolog
+    /// </summary>
+    /// <returns>A string with the error</returns>
+    public static str getErrorStr()
+    {
+        SysInfologEnumerator    enumerator;
+        SysInfologMessageStruct msgStruct;
+        Exception               exception;
+        str                     error;
+        ;
+
+        enumerator = SysInfologEnumerator::newData(infolog.cut());
+        
+        while (enumerator.moveNext())
+        {
+            msgStruct   = new SysInfologMessageStruct(enumerator.currentMessage());
+            exception   = enumerator.currentException();
+            error      += msgStruct.message() + '\r';
+        }
+        
+        return error;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>classNameLookup</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Performs a lookup on classes that extends _classId
+    /// </summary>
+    /// <param name = "_formControl">The form control</param>
+    /// <param name = "_classId">Id of the base class</param>
+    /// <param name = "_useImplements">Specifies if we are looking for classes that extends or implements</param>
+    /// <param name = "_descriptionMethodName">Name of the method that holds the description of the class</param>
+    public static void classNameLookup(FormControl      _formControl,
+                                       ClassId          _classId,
+                                       NoYes            _useImplements          = NoYes::No,
+                                       str              _descriptionMethodName  = 'description')
+    {
+        SysTableLookup          sysTableLookup  = SysTableLookup::newParameters(tableNum(OMGTmpLookupTable), _formControl);
+        SysDictClass            dictClass       = new SysDictClass(_classId);
+        List                    classes;
+        ListEnumerator          listEnumerator;
+        Query                   query           = new query();
+        QueryBuildDatasource    queryBuildDataSource;
+        OMGTmpLookupTable       tmpLookupTable;
+        ;
+
+        if (_useImplements == NoYes::No)
+        {
+            classes         = dictClass.extendedBy();
+        }
+        else
+        {
+            classes = dictClass.implementedBy();
+        }
+
+        listEnumerator  = classes.getEnumerator();
+
+        while (listEnumerator.moveNext())
+        {
+            SysDictClass tmp = new SysDictClass(listEnumerator.current());
+
+            if (tmp.id() != _classId)   // We dont want to show the base class
+            {
+                tmpLookupTable.clear();
+
+                if (tmp.hasStaticMethod(_descriptionMethodName))
+                {
+                    tmpLookupTable.Description = tmp.callStatic(_descriptionMethodName);
+                }
+
+                tmpLookupTable.Name = tmp.name();
+                tmpLookupTable.insert();
+            }
+        }
+
+        queryBuildDataSource = query.addDataSource(tableNum(OMGTmpLookupTable));
+        queryBuildDataSource.addSortField(fieldNum(OMGTmpLookupTable, Name));
+
+        sysTableLookup.addLookupfield(fieldNum(OMGTmpLookupTable, Name));
+        sysTableLookup.addLookupfield(fieldNum(OMGTmpLookupTable, Description));
+
+        sysTableLookup.parmTmpBuffer(tmpLookupTable);
+
+        sysTableLookup.parmQuery(query);
+        sysTableLookup.performFormLookup();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>downloadMessage</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Downloads a message
+    /// </summary>
+    /// <param name = "_inboundMessageTable">The inbound message in question</param>
+    public static void downloadMessage(OMGInboundMessageTable   _inboundMessageTable)
+    {
+        System.Byte[]           data;
+        System.Text.Encoding    encoding;
+        str                     decodedMessage;
+        System.Byte[]           byteArray;
+        OMGCodePage             codePage;
+        ;
+
+        codePage    = OMGMessageTypeTable::getInboundCodePage(_inboundMessageTable.MessageTypeId);
+
+        encoding    = System.Text.Encoding::GetEncoding(str2Int(codePage));
+
+        if (_inboundMessageTable.Base64Encoded == NoYes::Yes)
+        {
+            data            = System.Convert::FromBase64String(_inboundMessageTable.Message);
+            decodedMessage  = encoding.GetString(data);
+        }
+        else
+        {
+            decodedMessage  = _inboundMessageTable.Message;
+        }
+                
+        byteArray       = encoding.GetBytes(decodedMessage);
+
+        using(System.IO.MemoryStream memoryStream = new System.IO.MemoryStream(byteArray))
+        {
+            //send the file to the user
+            File::SendFileToUser(memoryStream, _inboundMessageTable.MessageName);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>checkBlobContainerExist</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Checks if a blob container exists
+    /// </summary>
+    /// <param name = "_blobContainerClient">The container client in question</param>
+    /// <returns>True if it exists</returns>
+    public static boolean checkBlobContainerExist(BlobContainerClient    _blobContainerClient)
+    {
+        boolean     ret;
+        ;
+
+        BlobRequestConditions           blobRequestConditions   = new BlobRequestConditions();        
+        ;
+
+        try
+        {
+            _blobContainerClient.getProperties(blobRequestConditions, CancellationToken::None);
+            ret = true;
+        }
+        catch (Exception::CLRError)
+        {
+            ret = false;
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>lookupAzureFileShareName</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Performs a lookup of file shares
+    /// </summary>
+    /// <param name = "_formControl">The calling control</param>
+    /// <param name = "_keyVaultCertificateRef">The key vault certificate ref</param>
+    public static void lookupAzureFileShareName(FormControl             _formControl,
+                                                KeyVaultCertificateRef  _keyVaultCertificateRef)
+    {
+        ShareServiceClient              shareServiceClient = new ShareServiceClient(KeyVaultCertificateHelper::getManualSecretValue(_keyVaultCertificateRef));
+        IEnumerable                     enumerable = shareServiceClient.GetShares(0,0,null, CancellationToken::None);
+        IEnumerator                     enumerator;
+        ShareItem                       shareItem;
+        OMGTmpLookupTable               tmpLookupTable;
+        Query                           query           = new query();
+        QueryBuildDatasource            queryBuildDataSource;
+        SysTableLookup                  sysTableLookup  = SysTableLookup::newParameters(tableNum(OMGTmpLookupTable), _formControl);
+        ;
+
+        if (enumerable)
+        {
+            enumerator = enumerable.GetEnumerator();
+ 
+            while (enumerator.MoveNext())
+            {
+                shareItem = enumerator.Current;
+                tmpLookupTable.Name         =  shareItem.Name;
+                tmpLookupTable.insert();
+            }
+        }
+ 
+        queryBuildDataSource = query.addDataSource(tableNum(OMGTmpLookupTable));
+        queryBuildDataSource.addSortField(fieldNum(OMGTmpLookupTable, Name));
+ 
+        sysTableLookup.addLookupfield(fieldNum(OMGTmpLookupTable, Name));
+        sysTableLookup.parmTmpBuffer(tmpLookupTable);
+ 
+        sysTableLookup.parmQuery(query);
+        sysTableLookup.performFormLookup();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>checkFileShareExists</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Checks if a file share exists
+    /// </summary>
+    /// <param name = "_shareClient">The file share client</param>
+    /// <returns>True if it exists</returns>
+    public static boolean checkFileShareExists(ShareClient  _shareClient)
+    {
+        ShareFileRequestConditions      shareFileRequestConditions = new ShareFileRequestConditions();
+        boolean                         ret;
+        ;
+
+        try
+        {
+            _shareClient.GetProperties(shareFileRequestConditions, CancellationToken::None);
+            ret = true;
+        }
+        catch (Exception::CLRError)
+        {
+            ret = false;
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>checkFileShareDirectoryExists</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Checks if a file share directory exists
+    /// </summary>
+    /// <param name = "_shareDirectoryClient">The file share directory</param>
+    /// <returns>True if it exists</returns>
+    public static boolean checkFileShareDirectoryExists(ShareDirectoryClient _shareDirectoryClient)
+    {        
+        boolean                         ret;
+        ;
+
+        try
+        {
+            _shareDirectoryClient.GetProperties(CancellationToken::None);
+            ret = true;
+        }
+        catch (Exception::CLRError)
+        {
+            ret = false;
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>trimDirectory</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Removes the fileshare name part from the trimmed directory
+    /// </summary>
+    /// <param name = "_fileShareName">The name of the file share</param>
+    /// <param name = "_directoryName">The name of the directory</param>
+    /// <returns>The trimmed directory</returns>
+    public static OMGFileShareDirectory trimDirectory(OMGFileShareName _fileShareName, OMGFileShareDirectory _directoryName)
+    {
+        OMGFileShareDirectory trimmedDirectory = _directoryName;
+        if (subStr(_directoryName, 2, strLen(_fileShareName)) == _fileShareName)
+        {
+            trimmedDirectory = strDel(_directoryName, 1, strLen(_fileShareName) + 1);
+        }
+        return trimmedDirectory;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

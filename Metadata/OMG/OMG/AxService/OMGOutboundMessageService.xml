@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxService xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundMessageService</Name>
+	<Class>OMGOutboundMessageService</Class>
+	<ExternalName>OMGOutboundMessageService</ExternalName>
+	<ServiceOperations>
+		<AxServiceOperation>
+			<Name>getMessage</Name>
+			<Method>getMessage</Method>
+			<SubscriberAccessLevel>
+				<Read>Allow</Read>
+			</SubscriberAccessLevel>
+		</AxServiceOperation>
+		<AxServiceOperation>
+			<Name>acknowledgeMessage</Name>
+			<Method>acknowledgeMessage</Method>
+			<SubscriberAccessLevel>
+				<Read>Allow</Read>
+			</SubscriberAccessLevel>
+		</AxServiceOperation>
+		<AxServiceOperation>
+			<Name>getOutboundMessageTableStatus</Name>
+			<Method>getOutboundMessageTableStatus</Method>
+			<SubscriberAccessLevel>
+				<Read>Allow</Read>
+			</SubscriberAccessLevel>
+		</AxServiceOperation>
+	</ServiceOperations>
+</AxService>

@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGUploadSingleMessageUI</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// UI handler for importing files
+/// </summary>
+class OMGUploadSingleMessageUI extends SysOperationAutomaticUIBuilder
+{
+    private const str OkButtonName      = 'CommandButton';
+    private const str FileUploadName    = 'FileUpload';
+    
+    DialogField         dialogCodePage;
+    DialogField         dialogMessageTypeId;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>build</Name>
+				<Source><![CDATA[
+    public void build()
+    {
+        FormBuildControl    formBuildControl;
+        FileUploadBuild     dialogFileUpload;
+        Dialog              dialogLocal;        
+        ;
+
+        super();
+
+        dialogLocal         = dialog as Dialog;
+                
+        formBuildControl    = dialogLocal.curFormGroup(dialogLocal.mainFormGroup());
+        dialogFileUpload    = formBuildControl.addControlEx(classstr(FileUpload), FileUploadName);
+
+        dialogFileUpload.style(FileUploadStyle::MinimalWithFilename);
+        dialogFileUpload.fileTypesAccepted(this.dataContractObject().getAvailableFileTypes());
+        dialogFileUpload.baseFileUploadStrategyClassName(classstr(FileUploadTemporaryStorageStrategy));
+        dialogFileUpload.fileNameLabel("@ApplicationPlatform:SelectFile");    
+        
+        dialogCodePage = this.bindInfo().getDialogField(this.dataContractObject(), methodStr(OMGUploadSingleMessageContract, parmCodePage));
+
+        // Get the MessageType dialogField and register overload function modified        
+        dialogMessageTypeId = this.bindInfo().getDialogField(this.dataContractObject(), methodStr(OMGUploadSingleMessageContract, parmMessageTypeId));
+        
+        if (dialogMessageTypeId)
+        {
+            dialogMessageTypeId.registerOverrideMethod(methodStr(FormStringControl, modified), methodStr(OMGUploadSingleMessageUI, messageTypeIdModified), this);
+        }
+
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>postRun</Name>
+				<Source><![CDATA[
+    public void postRun()
+    {
+        FormRun     formRun;
+        ;
+        super();
+
+        formRun = this.dialog().dialogForm().formRun();
+
+        this.dialogEventsSubscribe(formRun);
+        this.setDialogOkButtonEnabled(formRun, false);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialogEventsSubscribe</Name>
+				<Source><![CDATA[
+    private void dialogEventsSubscribe(FormRun _formRun)
+    {
+        FileUpload fileUpload = _formRun.control(_formRun.controlId(FileUploadName));
+        ;
+
+        fileUpload.notifyUploadCompleted        += eventhandler(this.uploadCompleted);
+        fileUpload.notifyUploadAttemptStarted   += eventhandler(this.uploadStarted);                
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>uploadCompleted</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Upload completed
+    /// </summary>
+    protected void uploadCompleted()
+    {
+        FormRun     formRun     = this.dialog().dialogForm().formRun();
+        FileUpload  fileUpload  = formRun.control(formRun.controlId(FileUploadName));
+        ;
+                
+        if (fileUpload)
+        {
+            System.IO.Stream fileStream = fileUpload.getUploadedFile(true);
+
+            if (fileStream)
+            {
+                this.dataContractObject().parmFileName(fileUpload.fileName());
+                this.dataContractObject().parmFileStream(fileStream);
+                this.setDialogOkButtonEnabled(formRun, true);
+            }
+            else
+            {
+                error("@OMG:FileNotOploadedCorrectly");
+            }
+        }
+        else
+        {
+            throw Exception::Error;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>setDialogOkButtonEnabled</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Enable/disable the ok button
+    /// </summary>
+    /// <param name = "_formRun">Formrun part of the dialog</param>
+    /// <param name = "_enabled">Should the button be enabled</param>
+    protected void setDialogOkButtonEnabled(FormRun _formRun, 
+                                            boolean _enabled)
+    {
+        FormControl okButtonControl = _formRun.control(_formRun.controlId(OkButtonName));
+        ;
+
+        if (okButtonControl)
+        {
+            okButtonControl.enabled(_enabled);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>uploadStarted</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Upload started
+    /// </summary>
+    private void uploadStarted()
+    {
+        FormRun     formRun = this.dialog().dialogForm().formRun();
+        ;
+
+        this.setDialogOkButtonEnabled(formRun, false);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>postBuild</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Disables the messageName control if we are updating an existing message
+    /// </summary>
+    public void postBuild()
+    {
+        DialogField messageNameControl;
+        ;
+        
+        super();
+                        
+        // Disabling the messageNameControl. Its just for info        
+        messageNameControl = this.bindInfo().getDialogField(this.dataContractObject(), methodStr(OMGUploadSingleMessageContract, parmMesageName));
+
+        if (messageNameControl && this.dataContractObject().parmMessageGUID())
+        {
+            messageNameControl.enabled(false);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>messageTypeIdModified</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Sets the codepage using the inbound parameters from the message type
+    /// </summary>
+    /// <param name = "_formStringControl">The calling form control</param>
+    /// <returns>True if all ok</returns>
+    public boolean messageTypeIdModified(FormStringControl  _formStringControl)
+    {
+        boolean                 ret = _formStringControl.modified();  
+        ;
+        
+        dialogCodePage.value(OMGMessageTypeTable::getInboundCodePage(_formStringControl.text()));
+              
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

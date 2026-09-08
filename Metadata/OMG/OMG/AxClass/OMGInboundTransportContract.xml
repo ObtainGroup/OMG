@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundTransportContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Data contract for fetching inbound messages
+/// </summary>
+[DataContractAttribute]
+class OMGInboundTransportContract
+{
+    OMGMessageTypeId    messageTypeId;
+
+}
+
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmMessageTypeId</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute]
+    public OMGMessageTypeId parmMessageTypeId(OMGMessageTypeId _messageTypeId = messageTypeId)
+    {
+        messageTypeId = _messageTypeId;
+        return messageTypeId;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxSecurityPrivilege xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGUploadSingleMessageNew</Name>
+	<Label>@OMG:UploadSingleMessage</Label>
+	<DataEntityPermissions />
+	<DirectAccessPermissions />
+	<EntryPoints>
+		<AxSecurityEntryPointReference>
+			<Name>OMGUploadSingleMessageNew</Name>
+			<Grant>
+				<Create>Allow</Create>
+				<Read>Allow</Read>
+				<Update>Allow</Update>
+			</Grant>
+			<GrantCurrentData>
+				<Create>Allow</Create>
+				<Read>Allow</Read>
+				<Update>Allow</Update>
+			</GrantCurrentData>
+			<GrantFutureData>
+				<Create>Allow</Create>
+				<Read>Allow</Read>
+				<Update>Allow</Update>
+			</GrantFutureData>
+			<ObjectName>OMGUploadSingleMessageNew</ObjectName>
+			<ObjectType>MenuItemAction</ObjectType>
+			<Forms />
+		</AxSecurityEntryPointReference>
+	</EntryPoints>
+	<FormControlOverrides />
+</AxSecurityPrivilege>

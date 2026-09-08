@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGApplicationInsightsDurationProperty</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Application Insights Duration Property
+/// </summary>
+public class OMGApplicationInsightsDurationProperty extends SysApplicationInsightsProperty
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>newFromDuration</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// New Application Insights Duration Property
+    /// </summary>
+    /// <param name = "_milliseconds">milliseconds</param>
+    /// <returns>OMGApplicationInsightsDurationProperty</returns>
+    public static OMGApplicationInsightsDurationProperty newFromDuration(int64 _milliseconds)
+    {
+        return new OMGApplicationInsightsDurationProperty(int642Str(_milliseconds));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initialize</Name>
+				<Source><![CDATA[
+    protected container initialize()
+    {
+        return OMGApplicationInsightsProperties::Duration;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

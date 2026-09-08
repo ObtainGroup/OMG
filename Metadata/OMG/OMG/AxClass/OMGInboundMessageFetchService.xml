@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundMessageFetchService</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Service class for fetching messages
+/// </summary>
+class OMGInboundMessageFetchService extends SysOperationServiceBase
+{
+    BatchHeader                     batchHeader;
+    SysOperationServiceController   parentTask;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>processOperation</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Kicks of the import of messages
+    /// </summary>
+    /// <param name = "_contract">The contract holding the parameters</param>
+    public void processOperation(OMGInboundMessageFetchContract _contract)
+    {
+        OMGMessageTypeTable                         messageTypeTable;
+        QueryRun                                    queryRun        = new QueryRun(_contract.getQuery());
+        OMGInboundTransport                         inboundTransport;
+        SysDictClass                                sysDictClass;
+        DataAreaId                                  company;
+        ;
+
+        while (queryRun.next())
+        {
+            messageTypeTable = queryRun.get(tableNum(OMGMessageTypeTable));
+            
+            // If there is no inbound Transport class, we dont even try :)
+            if (messageTypeTable.InboundMessageTransportClass)
+            {
+                sysDictClass = new SysDictClass(className2Id(messageTypeTable.InboundMessageTransportClass));
+                
+                if (sysDictClass)
+                {
+                    inboundTransport     = sysDictClass.makeObject();
+                    
+                    company = this.getParameterCompany(messageTypeTable, inboundTransport.dataContractClass());
+                    if (!company)
+                    {
+                        company = messageTypeTable.Company ? messageTypeTable.Company : curExt();
+                    }
+                   
+                    changecompany(company)
+                    {
+                        if (this.isExecutingInBatch())
+                        {
+                            if (!batchHeader)
+                            {
+                                batchHeader= this.getCurrentBatchHeader();
+                            }
+                            this.createBatchTask(sysDictClass, messageTypeTable.MessageTypeId);
+                        }
+                        else
+                        {
+                            OMGInboundTransportContract  dataContract = new OMGInboundTransportContract();
+                            dataContract.parmMessageTypeId(messageTypeTable.MessageTypeId);                            
+                            inboundTransport.processOperation(dataContract);                            
+                        }
+                    }
+                }                
+            }
+        }
+
+        if (batchHeader)
+        {
+            batchHeader.save();
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createBatchTask</Name>
+				<Source><![CDATA[
+    private void createBatchTask(SysDictClass       _sysDictClass,
+                                 OMGMessageTypeId   _messageTypeId)
+    {
+        SysOperationServiceController       serviceController;
+        OMGInboundTransportContract         dataContract;
+        ;
+
+        serviceController = new SysOperationServiceController(_sysDictClass.name(),
+                                                              'processOperation',
+                                                              SysOperationExecutionMode::Synchronous);
+        
+        serviceController.parmLoadFromSysLastValue(false); // Don't use SysLastValue (so no values will be retrieved and no one will be stored)
+        
+        dataContract = serviceController.getDataContractObject();
+        dataContract.parmMessageTypeId(_messageTypeId);
+                
+        batchHeader.addRuntimeTask(serviceController, this.getCurrentBatchTask().RecId);
+        
+        serviceController.batchInfo().parmCaption(strFmt("@OMG:FetchMessageType", _messageTypeId));
+        serviceController.batchInfo().parmDataareaId(curExt());
+
+        if (parentTask)
+        {
+            batchHeader.addDependency(serviceController, parentTask, BatchDependencyStatus::FinishedOrError);
+        }
+
+        parentTask = serviceController;        
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getParameterCompany</Name>
+				<Source><![CDATA[
+    public DataAreaId getParameterCompany(OMGMessageTypeTable   _messageTypeTable,
+                                          ClassId               _parameterContractClassID)
+    {
+        SysDictClass    sysDictDataContractClass    = new SysDictClass(_parameterContractClassID);
+        Set             methodSet                   = sysDictDataContractClass.methods(true, false, true);
+        SetEnumerator   methodSetEnumerator;
+        SysDictMethod   sysDictMethod;
+        DataAreaId      parameterCompany;
+        Object          parameterClassObject;
+        ;
+    
+        if (methodSet)
+        {
+            methodSetEnumerator = methodSet.getEnumerator();
+
+            while (methodSetEnumerator.moveNext())
+            {
+                sysDictMethod = methodSetEnumerator.current();
+                   
+                if (sysDictMethod && sysDictMethod.isPatternMethodParm() && sysDictMethod.getAttribute(classStr(OMGContractDataAreaIdAttribue)))
+                {
+                    parameterClassObject    = FormJsonSerializer::deserializeObject(_parameterContractClassID, _messageTypeTable.InboundSerializedParameterContract);
+                    parameterCompany        = sysDictDataContractClass.callObject(sysDictMethod.name(),parameterClassObject);
+                }
+            }        
+        }
+        
+        return parameterCompany;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

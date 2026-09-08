@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxView xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundMessageStatusView</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class OMGOutboundMessageStatusView extends common
+{
+}
+
+]]></Declaration>
+		<Methods />
+	</SourceCode>
+	<Label>@OMG:OMGInboundMessageStatus</Label>
+	<SubscriberAccessLevel>
+		<Read>Allow</Read>
+	</SubscriberAccessLevel>
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldBound">
+			<Name>Records</Name>
+			<Label>@OMG:Records</Label>
+			<Aggregation>Count</Aggregation>
+			<DataField>RecId</DataField>
+			<DataSource>OMGOutboundMessageTable</DataSource>
+		</AxViewField>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldBound">
+			<Name>SourceCompany</Name>
+			<Label>@OMG:Company</Label>
+			<DataField>SourceCompany</DataField>
+			<DataSource>OMGOutboundMessageTable</DataSource>
+		</AxViewField>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldBound">
+			<Name>MessageTypeId</Name>
+			<DataField>MessageTypeId</DataField>
+			<DataSource>OMGOutboundMessageTable</DataSource>
+		</AxViewField>
+		<AxViewField xmlns=""
+			i:type="AxViewFieldBound">
+			<Name>MessageStatus</Name>
+			<DataField>MessageStatus</DataField>
+			<DataSource>OMGOutboundMessageTable</DataSource>
+		</AxViewField>
+	</Fields>
+	<Indexes />
+	<Mappings />
+	<Relations />
+	<StateMachines />
+	<ViewMetadata>
+		<Name>Metadata</Name>
+		<SourceCode>
+			<Methods />
+		</SourceCode>
+		<DataSources>
+			<AxQuerySimpleRootDataSource>
+				<Name>OMGOutboundMessageTable</Name>
+				<DynamicFields>Yes</DynamicFields>
+				<Table>OMGOutboundMessageTable</Table>
+				<DataSources />
+				<DerivedDataSources />
+				<Fields />
+				<Ranges />
+				<GroupBy>
+					<AxQuerySimpleGroupByField>
+						<Name>Company</Name>
+						<DataSource>OMGOutboundMessageTable</DataSource>
+						<Field>SourceCompany</Field>
+					</AxQuerySimpleGroupByField>
+					<AxQuerySimpleGroupByField>
+						<Name>MessageTypeId</Name>
+						<DataSource>OMGOutboundMessageTable</DataSource>
+						<Field>MessageTypeId</Field>
+					</AxQuerySimpleGroupByField>
+					<AxQuerySimpleGroupByField>
+						<Name>MessageStatus</Name>
+						<DataSource>OMGOutboundMessageTable</DataSource>
+						<Field>MessageStatus</Field>
+					</AxQuerySimpleGroupByField>
+				</GroupBy>
+				<Having />
+				<OrderBy />
+			</AxQuerySimpleRootDataSource>
+		</DataSources>
+	</ViewMetadata>
+</AxView>

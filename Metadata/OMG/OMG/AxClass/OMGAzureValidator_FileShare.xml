@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGAzureValidator_FileShare</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Azure.Storage;
+using Azure.Storage.Files;
+using Azure.Storage.Files.Shares;
+using Azure.Storage.Files.Shares.Models;
+using System.Threading;
+
+/// <summary>
+/// Class for validating Azure file shares
+/// </summary>
+class OMGAzureValidator_FileShare extends OMGAzureValidator
+{    
+    ShareClient             shareClient;
+    ShareDirectoryClient    shareDirectoryClient;
+            
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>checkFileShareExist</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Checks if a file share exists
+    /// </summary>
+    /// <param name = "_fileShareName">The name of the file share</param>
+    /// <returns>True if ok</returns>
+    protected boolean checkFileShareExist(OMGFileShareName _fileShareName)
+    {
+        boolean   ret = true;        
+        ;
+        
+        shareClient = new ShareClient(KeyVaultCertificateHelper::getManualSecretValue(this.parmDataContract().parmKeyVaultCertificateRef()), _fileShareName);
+        
+        if (!OMGFeatures::checkFileShareExists(shareClient))
+        {
+            ret = checkFailed(strFmt("@OMG:FileshareDoesNotExist", _fileShareName));
+        }
+
+        return ret;       
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>checkDirectoryExist</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Checks if a directory exists on the file share
+    /// </summary>
+    /// <param name = "_fileShareDirectory">The directory in question</param>
+    /// <returns>True if all ok</returns>
+    protected boolean checkDirectoryExist(OMGFileShareDirectory   _fileShareDirectory)
+    {
+        boolean     ret = true;
+        ;
+
+        // We only need the directory part of the path
+        container   myCont      = str2con(OMGFeatures::removeFirstChar(_fileShareDirectory, '/'), '/');
+        myCont                  = conDel(myCont, 1, 1);
+        str         directory   = con2Str(myCont, '/');
+
+        shareDirectoryClient    = shareClient.GetDirectoryClient(directory);
+                
+        if (!OMGFeatures::checkFileShareDirectoryExists(shareDirectoryClient))
+        {
+            ret = checkFailed(strFmt("@OMG:FileshareDirectoryDoesNotExist", _fileShareDirectory));
+        }
+        
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

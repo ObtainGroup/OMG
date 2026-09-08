@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundDataContract_Azure</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Base data contract for Azure processes
+/// </summary>
+[DataContract]
+class OMGOutboundDataContract_Azure extends OMGDataContract_Azure
+{
+    FilenameType                fileType;
+    OMGFilenamePattern          filenamePattern;
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmFileType</Name>
+				<Source><![CDATA[
+    [DataMember]
+    public FilenameType parmFileType(FilenameType _fileType = fileType)
+    {
+        fileType = _fileType;
+        return fileType;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmFilenamePattern</Name>
+				<Source><![CDATA[
+    [DataMember]
+    public OMGFilenamePattern parmFilenamePattern(OMGFilenamePattern _filenamePattern = filenamePattern)
+    {
+        filenamePattern = _filenamePattern;
+        return filenamePattern;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

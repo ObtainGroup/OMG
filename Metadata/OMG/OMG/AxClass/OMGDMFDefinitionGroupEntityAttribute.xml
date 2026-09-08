@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGDMFDefinitionGroupEntityAttribute</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// /// Attribute class for defining if a parm method is refereing to a DMF definition group entity
+/// </summary>
+class OMGDMFDefinitionGroupEntityAttribute extends SysAttribute
+{
+}
+]]></Declaration>
+		<Methods />
+	</SourceCode>
+</AxClass>

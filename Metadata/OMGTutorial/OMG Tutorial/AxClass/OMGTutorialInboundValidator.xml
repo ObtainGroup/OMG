@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGTutorialInboundValidator</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+class OMGTutorialInboundValidator
+{
+    OMGTutorialInboundDataContract      dataContract;
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmDataContract</Name>
+				<Source><![CDATA[
+    public OMGTutorialInboundDataContract parmDataContract(OMGTutorialInboundDataContract _dataContract = dataContract)
+    {
+        dataContract = _dataContract;
+        return dataContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>newValidation</Name>
+				<Source><![CDATA[
+    public static OMGTutorialInboundValidator newValidation(OMGTutorialInboundDataContract    _dataContract)
+    {
+        SysDictClass                    sysDictValidationClass = new SysDictClass(_dataContract.validationClassId());
+        OMGTutorialInboundValidator     inboundValidator;
+        ;
+
+        if (sysDictValidationClass)
+        {
+            inboundValidator = sysDictValidationClass.makeObject();
+            inboundValidator.parmDataContract(_dataContract);
+        }
+
+        return inboundValidator;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validate</Name>
+				<Source><![CDATA[
+    public boolean validate()
+    {
+        // Place your validation of the inbound parameters here
+        boolean     ret = true;
+        ;
+
+        // TODO Validate something
+        /*
+        // Checking if the filePath contains a backslash
+        if (strScan(dataContract.parmFilePath(), @"\", 1, strLen(dataContract.parmFilePath())))
+        {
+            ret = checkFailed("The directory cannot contain a backslash");
+        }
+          */
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

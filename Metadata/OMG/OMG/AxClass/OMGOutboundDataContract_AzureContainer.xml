@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundDataContract_AzureContainer</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Data contract class for outbound Azure Container parameters
+/// </summary>
+[DataContract]
+class OMGOutboundDataContract_AzureContainer extends OMGOutboundDataContract_Azure
+{            
+    OMGAzureTargetContainer     targetContainer;
+                
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmTargetContainer</Name>
+				<Source><![CDATA[
+    [DataMember, OMGAzureContainerField, SysOperationDisplayOrder('3')]
+    public OMGAzureTargetContainer parmTargetContainer(OMGAzureTargetContainer _targetContainer = targetContainer)
+    {
+        targetContainer = _targetContainer;
+        return targetContainer;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validationClassId</Name>
+				<Source><![CDATA[
+    public ClassId validationClassId()
+    {
+        return classNum(OMGAzureValidator_OutboundContainer);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialogCaption</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// The caption used on the dialog
+    /// </summary>
+    /// <returns>A descriptive text</returns>
+    public Description dialogCaption()
+    {
+        return "@OMG:ExportToAzureContainers";
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGContractValidator_DMF</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Class for validating DMF contracts
+/// </summary>
+class OMGContractValidator_DMF
+{
+    OMGInboundHandlerDataContract_DMF   dataContract;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmDataContract</Name>
+				<Source><![CDATA[
+    public OMGInboundHandlerDataContract_DMF parmDataContract(OMGInboundHandlerDataContract_DMF _dataContract = dataContract)
+    {
+        dataContract = _dataContract;
+        return dataContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>newValidation</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiates the class and sets the datacontract
+    /// </summary>
+    /// <param name = "_dataContract">The data contract</param>
+    /// <returns>The instantiated class</returns>
+    public static OMGContractValidator_DMF newValidation(OMGInboundHandlerDataContract_DMF    _dataContract)
+    {
+        SysDictClass                sysDictValidationClass = new SysDictClass(_dataContract.validationClassId());
+        OMGContractValidator_DMF    contractValidator_DMF;
+        ;
+
+        if (sysDictValidationClass)
+        {
+            contractValidator_DMF = sysDictValidationClass.makeObject();
+            contractValidator_DMF.parmDataContract(_dataContract);
+        }
+
+        return contractValidator_DMF;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates the DMF setup
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    public boolean validate()
+    {
+        boolean     ret = this.validateDefinitionGroup();
+
+        if (ret)
+        {
+            ret = this.validateDefinitionGroupEntity();
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateDefinitionGroup</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validate the DMF definition group
+    /// </summary>
+    /// <returns>True if exists</returns>
+    protected boolean validateDefinitionGroup()
+    {
+        boolean ret = true;
+
+        if (!DMFDefinitionGroup::find(dataContract.parmDefinitionGroupName()).RecId)
+        {
+            ret = checkFailed(strFmt("@OMG:ImportProjectDoesntExist", dataContract.parmDefinitionGroupName()));
+        }
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateDefinitionGroupEntity</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validate the DMF definition group
+    /// </summary>
+    /// <returns>True if exists</returns>
+    protected boolean validateDefinitionGroupEntity()
+    {
+        boolean ret = true;
+
+        if (!DMFDefinitionGroupEntity::find(dataContract.parmDefinitionGroupName(), dataContract.parmEntityName()).RecId)
+        {
+            ret = checkFailed(strFmt("@OMG:ImportEntityDoesntExist", dataContract.parmEntityName()));
+        }
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

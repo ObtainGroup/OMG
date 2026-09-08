@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGAzureFileShareReader</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Azure.Storage;
+using Azure.Storage.Files.Shares;
+using Azure.Storage.Files.Shares.Models;
+using System.Collections;
+using System.Threading;
+
+/// <summary>
+/// Helper class for reading Azure file shares
+/// </summary>
+class OMGAzureFileShareReader extends OMGAzurefileShare
+{
+    OMGFileShareName            fileShareName;
+    OMGFileShareDirectory       sourceDirectory;
+    OMGFileShareDirectory       archiveDirectory;
+    ShareDirectoryClient        archiveDirectoryClient;
+    ShareDirectoryClient        rootDirectoryClient;
+    NoYesId                     includeSubdirectories;
+    NoYesId                     archiveUnderSourceDirectory;
+    FilenameType                fileTypeFilter;    
+    FolderName                  archiveFolderName;
+    OMGPostImportAction         postImportAction;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>buildFileHandleMap</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Builds a map of the file in the source directory
+    /// </summary>
+    /// <returns>The file map</returns>
+    public Map buildFileHandleMap()
+    {
+        Map                     fileHandleMap;
+        ShareClient             share   = new ShareClient(KeyVaultCertificateHelper::getManualSecretValue(keyVaultCertificateRef), fileShareName);
+        ShareDirectoryClient    sourceDirectoryClient;
+        IEnumerable             enumerable;        
+        container               archiveDirectoryContainer   = OMGAzureFileShare::str2con(this.parmArchiveDirectory(), '/');
+        OMGFileShareDirectory   sourceDirectoryTrimmed      = OMGFeatures::trimDirectory(this.parmFileShareName(), this.parmSourceDirectory());
+        OMGFileShareDirectory   archiveDirectoryTrimmed;
+        rootDirectoryClient     = share.GetRootDirectoryClient();
+        fileHandleMap           = new Map(Types::String, Types::Class);
+        
+        if (rootDirectoryClient.Exists(CancellationToken::None))
+        {
+            if (conLen(archiveDirectoryContainer))
+            {
+                archiveDirectoryTrimmed     = OMGFeatures::trimDirectory(this.parmFileShareName(), this.parmArchiveDirectory());
+                archiveDirectoryClient = share.GetDirectoryClient(archiveDirectoryTrimmed);
+            }
+            
+            sourceDirectoryClient = share.GetDirectoryClient(sourceDirectoryTrimmed);
+            if (sourceDirectoryClient.Exists(CancellationToken::None))
+            {
+                enumerable          = sourceDirectoryClient.GetFilesAndDirectories(null, CancellationToken::None);
+                if (enumerable)
+                {
+                    fileHandleMap   = this.loopDirectory(sourceDirectoryClient, fileHandleMap, enumerable);
+                }
+            }
+        }
+
+        return fileHandleMap;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>loopDirectory</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Loops a directory and returns a map with the files
+    /// </summary>
+    /// <param name = "_directoryClient">The directory we are looping</param>
+    /// <param name = "_fileHandleMap">Initial map</param>    
+    /// <param name = "_enumerable">Enumerable containing the content of the directory</param>
+    /// <returns>The map</returns>
+    public Map loopDirectory(ShareDirectoryClient           _directoryClient,
+                             Map                            _fileHandleMap,
+                             System.Collections.IEnumerable _enumerable)
+    {
+        System.Collections.IEnumerator  enumerator;
+        ShareFileItem                   shareFileItem;
+        Filename                        filename;
+        str                             fileType;
+        boolean                         addFile;
+        Map                             fileHandleMap  = _fileHandleMap;
+        enumerator = _enumerable.GetEnumerator();
+
+        while (enumerator.MoveNext())
+        {
+            
+            shareFileItem = enumerator.Current;
+            if (!shareFileItem.IsDirectory)
+            {
+                // file        = listFileItem;
+                filename    = _directoryClient.Name + '/' + shareFileItem.Name;
+                fileType    = conPeek(fileNameSplit(filename), 3);
+                
+                // Should the file be added according to the fileTypeFilter?
+                addFile = fileTypeFilter == fileType || !fileTypeFilter;
+                
+                if (addFile)
+                {
+                    ShareFileClient fileClient = _directoryClient.GetFileClient(shareFileItem.Name);
+                    
+                    fileHandleMap.add(_directoryClient.Name + '/' + shareFileItem.Name, fileClient);
+                }
+            }
+            if (includeSubdirectories && shareFileItem.IsDirectory)
+            {                                
+                str     archiveName = archiveUnderSourceDirectory ? archiveFolderName : archiveDirectory;
+                if (this.parmPostImportAction() != OMGPostImportAction::Archive || shareFileItem.Name != archiveName)
+                {
+                    ShareDirectoryClient subDirectoryClient = _directoryClient.GetSubdirectoryClient(shareFileItem.Name);
+                    fileHandleMap = this.loopDirectory(subDirectoryClient, fileHandleMap, subDirectoryClient.GetFilesAndDirectories(null, CancellationToken::None));
+                }
+            }
+        }
+        return fileHandleMap;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>newParameters</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiates the class from individual parameters
+    /// </summary>
+    /// <param name = "_keyVaultCertificateRef">The certificate</param>
+    /// <param name = "_fileShareName">The fileshare</param>
+    /// <param name = "_sourceDirectory">The source directory</param>
+    /// <param name = "_archiveDirectory">The archive directory</param>
+    /// <param name = "_includeSubDirectories">Do we search for files in subdirectories</param>
+    /// <param name = "_archiveUnderSubDirectory">Archive files in a directory under the sub directory?</param>
+    /// <param name = "_fileTypeFilter">Filter on file types ex. .xml or .csv</param>
+    /// <param name = "_postImportAction">The action to perform after the import</param>
+    /// <param name = "_archiveFolderName">The name of the archive folder if we are archiving under the source directory</param>
+    /// <returns>The instantiated class</returns>
+    public static OMGAzureFileShareReader newParameters(KeyVaultCertificateRef  _keyVaultCertificateRef,
+                                                          OMGFileShareName      _fileShareName,
+                                                          OMGFileShareDirectory _sourceDirectory,
+                                                          OMGFileShareDirectory _archiveDirectory,
+                                                          FilenameType          _fileTypeFilter,
+                                                          OMGPostImportAction   _postImportAction,
+                                                          NoYesId               _includeSubDirectories = NoYes::No,
+                                                          NoYesId               _archiveUnderSubDirectory = NoYes::No,
+                                                          FolderName            _archiveFolderName          = '')
+    {
+        OMGAzureFileShareReader    azureFileShareReader = new OMGAzureFileShareReader();
+        ;
+
+        azureFileShareReader.parmKeyVaultCertificateRef(_keyVaultCertificateRef);
+        azureFileShareReader.parmFileShareName(_fileShareName);
+        azureFileShareReader.parmSourceDirectory(_sourceDirectory);
+        azureFileShareReader.parmArchiveDirectory(_archiveDirectory);
+        azureFileShareReader.parmIncludeSubdirectories(_includeSubDirectories);
+        azureFileShareReader.parmArchiveUnderSourceDirectory(_archiveUnderSubDirectory);
+        azureFileShareReader.parmFileTypeFilter(_fileTypeFilter);
+        azureFileShareReader.parmArchiveFolderName(_archiveFolderName);
+        azureFileShareReader.parmPostImportAction(_postImportAction);
+
+        return azureFileShareReader;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPostImportAction</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Method to get/set the post import action
+    /// </summary>
+    /// <param name = "_postImportAction">The value to set</param>
+    /// <returns>The value</returns>
+    public OMGPostImportAction parmPostImportAction(OMGPostImportAction _postImportAction = postImportAction)
+    {
+        postImportAction = _postImportAction;
+        return postImportAction;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmFileShareName</Name>
+				<Source><![CDATA[
+    public OMGFileShareName parmFileShareName(OMGFileShareName _fileShareName = fileShareName)
+    {
+        fileShareName = _fileShareName;
+        return fileShareName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmSourceDirectory</Name>
+				<Source><![CDATA[
+    public OMGFileShareDirectory parmSourceDirectory(OMGFileShareDirectory _sourceDirectory = sourceDirectory)
+    {
+        sourceDirectory = _sourceDirectory;
+        return sourceDirectory;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmArchiveDirectory</Name>
+				<Source><![CDATA[
+    public OMGFileShareDirectory parmArchiveDirectory(OMGFileShareDirectory _archiveDirectory = archiveDirectory)
+    {
+        archiveDirectory = _archiveDirectory;
+        return archiveDirectory;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmIncludeSubdirectories</Name>
+				<Source><![CDATA[
+    public NoYesId parmIncludeSubdirectories(NoYesId _includeSubdirectories = includeSubdirectories)
+    {
+        includeSubdirectories = _includeSubdirectories;
+        return includeSubdirectories;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmArchiveUnderSourceDirectory</Name>
+				<Source><![CDATA[
+    public NoYesId parmArchiveUnderSourceDirectory(NoYesId _archiveUnderSourceDirectory = archiveUnderSourceDirectory)
+    {
+        archiveUnderSourceDirectory = _archiveUnderSourceDirectory;
+        return archiveUnderSourceDirectory;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmFileTypeFilter</Name>
+				<Source><![CDATA[
+    public FilenameType parmFileTypeFilter(FilenameType _fileTypeFilter = fileTypeFilter)
+    {
+        fileTypeFilter = _fileTypeFilter;
+        return fileTypeFilter;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmArchiveFolderName</Name>
+				<Source><![CDATA[
+    public FolderName parmArchiveFolderName(FolderName _archiveFolderName = archiveFolderName)
+    {
+        archiveFolderName = _archiveFolderName;
+        return archiveFolderName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>moveToArchiveFolder</Name>
+				<Source><![CDATA[
+    /// <summary>
+    ///  Moves a file to the archive folder
+    /// </summary>
+    /// <param name = "_fileClient">The file to move</param>
+    public void moveToArchiveFolder(ShareFileClient _fileClient)
+    {
+        ShareClient     share   = new ShareClient(KeyVaultCertificateHelper::getManualSecretValue(keyVaultCertificateRef), fileShareName);
+        System.Uri      uri = _fileClient.Uri;
+        System.Array    segmentArray = uri.Segments;
+        Counter         segmentCounter;
+        container       archiveDirContainer;
+
+        if (archiveUnderSourceDirectory == NoYes::Yes)
+        {
+            // Getting the folders from the segment. Last element is the actual filename. We dont need that
+            for (segmentCounter = 1; segmentCounter < segmentArray.Length - 1; segmentCounter++)
+            {
+                archiveDirContainer = conIns(archiveDirContainer, segmentCounter, segmentArray.GetValue(segmentCounter));
+            }
+
+            // Adding the archive folder name to the end of the container
+            archiveDirContainer     = conIns(archiveDirContainer, conLen(archiveDirContainer)+1, archiveFolderName);
+
+            // Removing the file share name from the container
+            archiveDirContainer = conDel(archiveDirContainer, 1, 1);
+
+            // Getting the CloudFileDirectory using the archiveDirContaine            
+            archiveDirectoryClient  = share.GetDirectoryClient(con2Str(archiveDirContainer, ''));
+        }
+        // Creating the directory if it does not exist        
+        if (archiveDirectoryClient)
+        {
+            archiveDirectoryClient.CreateIfNotExists(null, null, null, CancellationToken::None);            
+        }
+        
+        if (archiveDirectoryClient)
+        {
+            this.copyFile(_fileClient, archiveDirectoryClient, true);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>copyFile</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Copies a file from one directory to another and deletes it if requested
+    /// </summary>
+    /// <param name = "_fileClient">The file</param>
+    /// <param name = "_targetDirectoryClient">The target directory</param>
+    /// <param name = "_deleteAfterCopy">Specifies if the file should be deleted afterwards</param>
+    public void copyFile(ShareFileClient        _fileClient,
+                         ShareDirectoryClient   _targetDirectoryClient,
+                         boolean                _deleteAfterCopy    = true)
+    {
+        ShareFileClient       targetFile = _targetDirectoryClient.GetFileClient(_fileClient.Name);
+        targetFile.StartCopy(_fileClient.Uri, null, CancellationToken::None);
+
+        if (_deleteAfterCopy == true)
+        {
+            _fileClient.Delete(null, CancellationToken::None);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>deleteFile</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Deleted the file if it exists
+    /// </summary>
+    /// <param name = "_fileClient">The file in question</param>
+    public void deleteFile(ShareFileClient _fileClient)
+    {
+        _fileClient.DeleteIfExists(null, CancellationToken::None);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>postImportAction</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Archives or deletes the file depending on the setup in the data contract
+    /// </summary>
+    /// <param name = "_dataContract">The data contract</param>
+    /// <param name = "_fileClient">The file in question</param>
+    public void postImportAction(OMGInboundDataContract_Azure   _dataContract,
+                                 ShareFileClient                _fileClient)
+    {
+        ;
+
+        switch (_dataContract.parmPostImportAction())
+        {
+            case OMGPostImportAction::Archive   :
+                this.moveToArchiveFolder(_fileClient);
+                break;
+            case OMGPostImportAction::Delete    :
+                this.deleteFile(_fileClient);
+                break;
+            case OMGPostImportAction::NoAction  :
+                break;
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGIInboundMessageHandler</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+interface OMGIInboundMessageHandler
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>processMessage</Name>
+				<Source><![CDATA[
+    public OMGInboundMessageResponseContract processMessage(OMGInboundMessageTable   _inboundMessage)
+    {
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateMessageTypeParameters</Name>
+				<Source><![CDATA[
+    public boolean validateMessageTypeParameters(OMGMessageTypeTable    _messageTypeTable)
+    {
+        // Any validation issues should be written to the parmResponse method
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

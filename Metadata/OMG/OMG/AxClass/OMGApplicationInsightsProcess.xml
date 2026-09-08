@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGApplicationInsightsProcess</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// ApplicationInsights process log object
+/// </summary>
+public class OMGApplicationInsightsProcess extends OMGApplicationInsights
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>newMessageTypeId</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Return new instance of OMGApplicationInsightsProcess
+    /// </summary>
+    /// <param name = "_messageTypeId">MessageTypeId</param>
+    /// <returns>Instance</returns>
+    public static OMGApplicationInsightsProcess newMessageTypeId(str _messageTypeId)
+    {
+        return new OMGApplicationInsightsProcess(_messageTypeId);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    protected void new(str _messageTypeId)
+    {
+        super('OMG.Process');
+        this.addMessageTypeIdProperty(_messageTypeId);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>addErrorCountProperty</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Add Error count property to event telemetry
+    /// </summary>
+    /// <param name = "_errorCount">ErrorCount</param>
+    public void addErrorCountProperty(int64 _errorCount)
+    {
+        SysApplicationInsightsProperty property = OMGApplicationInsightsMessageErrorCountProperty::newFromErrorCount(_errorCount);
+        eventTelemetry.addProperty(property);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>addErrorMessage</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Add Error message property to event telemetry
+    /// </summary>
+    /// <param name = "_errorMessage">ErrorMessage</param>
+    public void addErrorMessage(str _errorMessage)
+    {
+        SysApplicationInsightsProperty property = OMGApplicationInsightsErrorMessageProperty::newFromErrorMessage(_errorMessage);
+        eventTelemetry.addProperty(property);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>addMessageId</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Add MessageId property to event telemetry
+    /// </summary>
+    /// <param name = "_messageId">MessageId</param>
+    public void addMessageId(str _messageId)
+    {
+        SysApplicationInsightsProperty property = OMGApplicationInsightsMessageIdProperty::newFromMessageId(_messageId);
+        eventTelemetry.addProperty(property);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

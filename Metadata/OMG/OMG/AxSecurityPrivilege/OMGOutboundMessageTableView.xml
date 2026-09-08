@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxSecurityPrivilege xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundMessageTableView</Name>
+	<Label>@OMG:ViewOutboundMessages</Label>
+	<DataEntityPermissions>
+		<AxSecurityDataEntityPermission>
+			<Grant>
+				<Read>Allow</Read>
+			</Grant>
+			<Name>OMGOutboundMesssageTableEntity</Name>
+			<Fields />
+			<Methods />
+		</AxSecurityDataEntityPermission>
+	</DataEntityPermissions>
+	<DirectAccessPermissions />
+	<EntryPoints>
+		<AxSecurityEntryPointReference>
+			<Name>OMGOutboundMessageTable</Name>
+			<Grant>
+				<Read>Allow</Read>
+			</Grant>
+			<GrantCurrentData>
+				<Read>Allow</Read>
+			</GrantCurrentData>
+			<GrantFutureData>
+				<Read>Allow</Read>
+			</GrantFutureData>
+			<GrantPastData>
+				<Read>Allow</Read>
+			</GrantPastData>
+			<ObjectName>OMGOutboundMessageTable</ObjectName>
+			<ObjectType>MenuItemDisplay</ObjectType>
+			<Forms>
+				<AxSecurityEntryPointReferenceForm>
+					<Name>OMGOutboundMessageTable</Name>
+					<Controls />
+					<DataSources />
+				</AxSecurityEntryPointReferenceForm>
+			</Forms>
+		</AxSecurityEntryPointReference>
+	</EntryPoints>
+	<FormControlOverrides />
+</AxSecurityPrivilege>

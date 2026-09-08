@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGApplicationInsightsMessageCountProperty</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Application Insights property for message count.
+/// </summary>
+public class OMGApplicationInsightsMessageCountProperty extends SysApplicationInsightsProperty
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>newFromRecordCount</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Initializes a new instance with recordcount initialized
+    /// </summary>
+    /// <param name="_recordCount">Record count</param>
+    /// <returns>Application Insights property for message count</returns>
+    public static OMGApplicationInsightsMessageCountProperty newFromRecordCount(int64 _recordCount)
+    {
+        return new OMGApplicationInsightsMessageCountProperty(int642Str(_recordCount));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initialize</Name>
+				<Source><![CDATA[
+    protected container initialize()
+    {
+        return OMGApplicationInsightsProperties::MessageCount;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

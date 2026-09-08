@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGApplicationInsightsMessageIdProperty</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Application insights property for the message id.
+/// </summary>
+public class OMGApplicationInsightsMessageIdProperty extends SysApplicationInsightsProperty
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>newFromMessageId</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OMGApplicationInsightsMessageIdProperty"/> class.
+    /// </summary>
+    /// <param name="_messageId">MessageId</param>
+    /// <returns>Instance</returns>
+    public static OMGApplicationInsightsMessageIdProperty newFromMessageId(str _messageId)
+    {
+        return new OMGApplicationInsightsMessageIdProperty(_messageId);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initialize</Name>
+				<Source><![CDATA[
+    protected container initialize()
+    {
+        return OMGApplicationInsightsProperties::MessageId;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

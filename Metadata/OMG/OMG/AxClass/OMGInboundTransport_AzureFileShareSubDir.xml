@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundTransport_AzureFileShareSubDir</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Azure.Storage;
+using Azure.Storage.Files.Shares;
+using Azure.Storage.Files.Shares.Models;
+using System.Threading;
+
+/// <summary>
+/// Handler class for importing files from an Azure file share including subdirectories
+/// </summary>
+class OMGInboundTransport_AzureFileShareSubDir extends OMGInboundTransport_AzureFileShare
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>dataContractClass</Name>
+				<Source><![CDATA[
+    public ClassId dataContractClass()
+    {
+        return classNum(OMGInboundDataContract_AzureFileShareSubDir);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>constructReader</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Constructs the reader class
+    /// </summary>
+    /// <param name = "_dataContract">The data contract with the parameters to construct the class</param>
+    /// <returns>The constructed class</returns>
+    public OMGAzureFileShareReader constructReader(OMGInboundTransportContract _dataContract)
+    {
+        return OMGAzureFileShareReader::newParameters(dataContract.parmKeyVaultCertificateRef(),
+                                                      dataContract.parmFileShareName(),
+                                                      dataContract.parmSourceDirectory(),
+                                                      dataContract.parmArchiveDirectory(),
+                                                      dataContract.parmFileTypeFilter(),
+                                                      dataContract.parmPostImportAction(),
+                                                      NoYes::Yes,
+                                                      dataContract.parmArchiveUnderSourceDirectory(),
+                                                      dataContract.parmArchiveFolderName());
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>description</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Description of class
+    /// </summary>
+    /// <returns>The description</returns>
+    public static Description description()
+    {
+        return "@OMG:ImportFromAzureFileShareSubDir";
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGMessageTableCleanupContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Data contract class for the cleanup of in- and outbound messages
+/// </summary>
+[DataContract]
+class OMGMessageTableCleanupContract
+{
+    NoYesId     cleanInbound;
+    NoYesId     cleanOutbound;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmCleanInbound</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute, SysOperationLabelAttribute(literalStr("@OMG:CleanupInboundMessages"))]
+    public NoYesId parmCleanInbound(NoYesId _cleanInbound = cleanInbound)
+    {
+        cleanInbound = _cleanInbound;
+        return cleanInbound;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCleanOutbound</Name>
+				<Source><![CDATA[
+    [DataMemberAttribute, SysOperationLabelAttribute(literalStr("@OMG:CleanupOutboundMessages"))]
+    public NoYesId parmCleanOutbound(NoYesId _cleanOutbound = cleanOutbound)
+    {
+        cleanOutbound = _cleanOutbound;
+        return cleanOutbound;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

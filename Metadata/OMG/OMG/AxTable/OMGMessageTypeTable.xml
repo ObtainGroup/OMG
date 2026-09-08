@@ -1,0 +1,555 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGMessageTypeTable</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class OMGMessageTypeTable extends common
+{
+   
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>find</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Finds the OMGMessageTypeTable record based in the type id.
+    /// </summary>
+    /// <param name = "_typeId">The type id</param>
+    /// <param name = "_forUpdate">Should the record be selected for update?</param>
+    /// <returns>The OMGMessageTypeTable record</returns>
+    public static OMGMessageTypeTable find(OMGMessageTypeId _typeId, boolean _forUpdate = false)
+    {
+        OMGMessageTypeTable typeTable;
+
+        typeTable.selectForUpdate(_forUpdate);
+
+        if (_typeId)
+        {
+            select firstonly typeTable
+                where typeTable.MessageTypeId == _typeId;
+        }
+
+        return typeTable;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateWrite</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates that all is ok
+    /// </summary>
+    /// <returns>True if all is ok</returns>
+    public boolean validateWrite()
+    {
+        boolean ret;
+    
+        ret = super();
+    
+        if (ret)
+        {
+            ret = this.validateClasses();
+
+            if (this.InboundMessageHandlerClass && !this.Company)
+            {
+                ret = checkFailed("@OMG:CompanyMissingCheck");
+            }
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateClasses</Name>
+				<Source><![CDATA[
+    public boolean validateClasses()
+    {
+        boolean     ret = true;
+        DictClass   dictClass;
+        ;
+
+        if (this.InboundMessageTransportClass)
+        {
+            dictClass = new DictClass(className2Id(this.InboundMessageTransportClass));
+            if (!dictClass)
+            {
+                ret = checkFailed(strFmt("@OMG:InboundTransportClassDoesNotExist", this.InboundMessageTransportClass));
+            }
+        }
+
+        if (this.InboundMessageHandlerClass)
+        {
+            dictClass = new DictClass(className2Id(this.InboundMessageHandlerClass));
+            if (!dictClass)
+            {
+                ret = checkFailed(strFmt("@OMG:InboundHandlerClassDoesNotExist", this.InboundMessageHandlerClass));
+            }
+        }
+
+        if (this.OutboundMessageTransportClass)
+        {
+            dictClass = new DictClass(className2Id(this.OutboundMessageTransportClass));
+            if (!dictClass)
+            {
+                ret = checkFailed(strFmt("@OMG:OutboundTransportClassDoesNotExist", this.OutboundMessageTransportClass));
+            }
+        }
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getDeserializedParameterContract</Name>
+				<Source><![CDATA[
+    public static Object getDeserializedParameterContract(ClassId                           _transportClassId,
+                                                          OMGSerializedParameterContract    _serializedContract)
+    {
+        Object          dataContractClass;
+        Object          transportHandlerObject;
+        SysDictClass    sysDictTransportClass   = new SysDictClass(_transportClassId);
+        MethodName      dataContractMethodName  = 'dataContractClass';
+        ClassId         dataContractClassId;
+        SysDictClass    sysDictDataContractClass;
+        ;
+        
+        if (sysDictTransportClass)
+        {
+            transportHandlerObject = sysDictTransportClass.makeObject();
+                    
+            if (sysDictTransportClass.hasObjectMethod(dataContractMethodName))
+            {
+                dataContractClassId         = sysDictTransportClass.callObject(dataContractMethodName, transportHandlerObject);
+                sysDictDataContractClass    = new SysDictClass(dataContractClassId);
+                dataContractClass           = FormJsonSerializer::deserializeObject(dataContractClassId, _serializedContract);
+            }
+        }
+        
+        return dataContractClass;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getInboundCodePage</Name>
+				<Source><![CDATA[
+    public static OMGCodePage getInboundCodePage(OMGMessageTypeId   _messageTypeId)
+    {        
+        OMGCodePage             codePage;
+        OMGMessageTypeTable     messageTypeTable = OMGMessageTypeTable::find(_messageTypeId);
+        ;
+
+        if (messageTypeTable && messageTypeTable.InboundMessageTransportClass)
+        {
+            Object  parameterContract = OMGMessageTypeTable::getDeserializedParameterContract(className2Id(messageTypeTable.InboundMessageTransportClass),
+                                                                                              messageTypeTable.InboundSerializedParameterContract);
+            if (parameterContract)
+            {
+                codePage = parameterContract.parmCodePage();
+            }
+        }
+    
+        return codePage;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>modifiedField</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Modified field code
+    /// </summary>
+    /// <param name = "_fieldId">The field in question</param>
+    public void modifiedField(FieldId _fieldId)
+    {
+        super(_fieldId);
+
+        switch(_fieldId)
+        {
+            case fieldNum(OMGMessageTypeTable, InboundMessageTransportClass)    :
+                this.InboundSerializedParameterContract = '';
+                if (this.Active)
+                {
+                    this.Active = NoYes::No;
+                    Info(strFmt("@OMG:MessageTypeDeActivated", this.MessageTypeId));
+                }
+                break;
+
+            case fieldNum(OMGMessageTypeTable, OutboundMessageTransportClass)   :
+                this.OutboundSerializedParameterContract = '';
+                if (this.Active)
+                {
+                    this.Active = NoYes::No;
+                    Info(strFmt("@OMG:MessageTypeDeActivated", this.MessageTypeId));
+                }
+                break;
+
+            case fieldNum(OMGMessageTypeTable, Active)                          :
+                if (this.Active == NoYes::Yes)
+                {
+                    boolean     inboundOk       = this.validateDataContracts(this.InboundMessageTransportClass, this.InboundSerializedParameterContract);
+                    boolean     outboundOk      = this.validateDataContracts(this.OutboundMessageTransportClass, this.OutboundSerializedParameterContract);
+                    boolean     processingOk    = this.validateDataContracts(this.InboundMessageHandlerClass, this.InboundSerializedHandlerContract);
+
+                    if (!inboundOk || !outboundOk || !processingOk)
+                    {
+                        this.Active = NoYes::No;
+                    }
+                }
+
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateDataContracts</Name>
+				<Source><![CDATA[
+    public boolean validateDataContracts(ClassName                      _className,
+                                         OMGSerializedParameterContract _serializedParameterContract)
+    {
+        boolean         ret = true;
+        Object          dataContract;
+        SysDictClass    sysDictDataContractClass;
+        SysDictClass    sysDictClass;
+        CompanyId       validationCompany;
+        ;
+        
+        if (_className && this.getDataContractClassId(className2Id(_className)))
+        {
+            dataContract = OMGMessageTypeTable::getDeserializedParameterContract(className2Id(_className), _serializedParameterContract);
+
+            if (!dataContract)
+            {
+                // Creating a blank data contract to be able to call validate
+                sysDictDataContractClass    = new SysDictClass(this.getDataContractClassId(className2Id(_className)));
+                dataContract                = sysDictDataContractClass.makeObject();                
+            }
+            
+            sysDictClass = new SysDictClass(classIdGet(dataContract));
+            
+            if (sysDictClass.hasObjectMethod('parmContractDataAreaId'))
+            {
+                validationCompany = dataContract.parmContractDataAreaId();
+            }
+                        
+            validationCompany = validationCompany ? validationCompany : curExt();
+                        
+            if (dataContract && sysDictClass.hasObjectMethod('validate'))
+            {
+                setPrefix(strFmt("@OMG:ValidatingParametersFor", _className));
+
+                changecompany(validationCompany)
+                {
+                    ret = dataContract.validate();
+                }
+            }
+        }
+        
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getDataContractClassId</Name>
+				<Source><![CDATA[
+    public classId getDataContractClassId(ClassId   _transportClassId)
+    {
+        SysDictClass    sysDictTransportClass   = new SysDictClass(_transportClassId);
+        MethodName      dataContractMethodName  = 'dataContractClass';
+        ClassId         dataContractClassId;
+        ;
+
+        if (sysDictTransportClass.hasObjectMethod(dataContractMethodName))
+        {
+            dataContractClassId         = sysDictTransportClass.callObject(dataContractMethodName, sysDictTransportClass.makeObject());
+        }
+
+        return dataContractClassId;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<DeveloperDocumentation>@OMG:OMGMessageTypeTableDevDoc</DeveloperDocumentation>
+	<FormRef>OMGMessageTypeTable</FormRef>
+	<Label>@OMG:MessageTypes</Label>
+	<SubscriberAccessLevel>
+		<Read>Allow</Read>
+	</SubscriberAccessLevel>
+	<TableGroup>Group</TableGroup>
+	<TitleField1>MessageTypeId</TitleField1>
+	<TitleField2>Name</TitleField2>
+	<CacheLookup>FoundAndEmpty</CacheLookup>
+	<CreatedBy>Yes</CreatedBy>
+	<CreatedDateTime>Yes</CreatedDateTime>
+	<ModifiedBy>Yes</ModifiedBy>
+	<ModifiedDateTime>Yes</ModifiedDateTime>
+	<PrimaryIndex>TypeIdx</PrimaryIndex>
+	<ReplacementKey>TypeIdx</ReplacementKey>
+	<SaveDataPerCompany>No</SaveDataPerCompany>
+	<TableContents>BaseData</TableContents>
+	<DeleteActions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>MessageTypeId</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Name</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Active</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Synchronous</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>InboundMessageHandlerClass</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Company</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>RequestRetentionPeriod</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>MessageTypeId</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>All</Name>
+			<Label>@SYS11696</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>MessageTypeId</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Name</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Active</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>InboundMessageTransportClass</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Synchronous</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>InboundMessageHandlerClass</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Company</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>OutboundMessageTransportClass</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>RequestRetentionPeriod</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>ProcessingPriority</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>ApplicationInsightLogging</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Outbound</Name>
+			<Label>@OMG:Outbound</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>OutboundMessageTransportClass</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Inbound</Name>
+			<Label>@OMG:Inbound</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>InboundMessageTransportClass</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>InboundMessageHandlerClass</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Synchronous</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Processing</Name>
+			<Label>@OMG:Processing</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>ProcessingPriority</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Company</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Identification</Name>
+			<Label>@SYS104938</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>MessageTypeId</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Name</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Setup</Name>
+			<Label>@SYS101240</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>Active</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>RequestRetentionPeriod</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>ApplicationInsightLogging</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>MessageTypeId</Name>
+			<AllowEdit>No</AllowEdit>
+			<ExtendedDataType>OMGMessageTypeId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>Name</Name>
+			<ExtendedDataType>Name</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>Active</Name>
+			<Label>@OMG:Active</Label>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>Synchronous</Name>
+			<Label>@OMG:SynchronousServiceCall</Label>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>InboundMessageHandlerClass</Name>
+			<ExtendedDataType>Name</ExtendedDataType>
+			<Label>@OMG:InboundMessageHandlerClass</Label>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>Company</Name>
+			<ExtendedDataType>DataAreaId</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>RequestRetentionPeriod</Name>
+			<ExtendedDataType>OMGRequestRetentionPeriod</ExtendedDataType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>OutboundMessageTransportClass</Name>
+			<ExtendedDataType>OMGOutboundMessageTransportClass</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>OutboundSerializedParameterContract</Name>
+			<ExtendedDataType>OMGSerializedParameterContract</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Visible>No</Visible>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>InboundMessageTransportClass</Name>
+			<ExtendedDataType>OMGInboundMessageTransportClass</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>InboundSerializedParameterContract</Name>
+			<ExtendedDataType>OMGSerializedParameterContract</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Visible>No</Visible>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldInt">
+			<Name>ProcessingPriority</Name>
+			<ExtendedDataType>OMGProcessingPriority</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>InboundSerializedHandlerContract</Name>
+			<ExtendedDataType>OMGSerializedParameterContract</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Visible>No</Visible>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>ApplicationInsightLogging</Name>
+			<ExtendedDataType>OMGApplicationInsightsLogging</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes>
+		<AxTableIndex>
+			<Name>TypeIdx</Name>
+			<AlternateKey>Yes</AlternateKey>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>MessageTypeId</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+	</Indexes>
+	<Mappings />
+	<Relations />
+	<StateMachines />
+</AxTable>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundRequestContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Contract class for requesting outbound messages via service
+/// </summary>
+[DataContract]
+public class OMGOutboundRequestContract
+{
+    OMGMessageTypeId    messageTypeId;
+    DataAreaId          company;
+    boolean             awaitAcknowledgement;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmCompany</Name>
+				<Source><![CDATA[
+    [DataMember('Company')]
+    public DataAreaId parmCompany(DataAreaId    _company = company)
+    {
+        company = _company;
+        return company;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMessageTypeId</Name>
+				<Source><![CDATA[
+    [DataMember('MessageTypeId')]
+    public OMGMessageTypeId parmMessageTypeId(OMGMessageTypeId _messageTypeId  = messageTypeId)
+    {
+        messageTypeId = _messageTypeId;
+        return messageTypeId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmAwaitAcknowledgement</Name>
+				<Source><![CDATA[
+    [DataMember('AwaitAcknowledgement')]
+    public boolean parmAwaitAcknowledgement(boolean _awaitAcknowledgement = awaitAcknowledgement)
+    {
+        awaitAcknowledgement = _awaitAcknowledgement;
+
+        return awaitAcknowledgement;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

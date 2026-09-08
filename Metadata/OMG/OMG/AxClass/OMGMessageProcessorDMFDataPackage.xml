@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGMessageProcessorDMFDataPackage</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Inbound message processor class for importing DMF packages
+/// </summary>
+class OMGMessageProcessorDMFDataPackage extends OMGInboundMessageHandler implements OMGIInboundMessageHandler
+{
+    OMGInboundHandlerDataContract_DMFPackage   parameterContract;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>dataContractClass</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// The data contract class
+    /// </summary>
+    /// <returns>The class id</returns>
+    public ClassId dataContractClass()
+    {
+        return classNum(OMGInboundHandlerDataContract_DMFPackage);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateMessageTypeParameters</Name>
+				<Source><![CDATA[
+    public boolean validateMessageTypeParameters(OMGMessageTypeTable  _messageTypeTable)
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processMessage</Name>
+				<Source><![CDATA[
+    public OMGInboundMessageResponseContract processMessage(OMGInboundMessageTable    _inboundMessage)
+    {        
+        OMGInboundMessageResponseContract   responseContract        = new OMGInboundMessageResponseContract();
+        System.IO.Stream                    memoryStream            = OMGInboundMessageTable::getMemoryStream(_inboundMessage);
+        SysDictClass                        uploadStrategyDictClass = new SysDictClass(className2Id('FileUploadTemporaryStorageStrategy'));
+        FileUploadTemporaryStorageStrategy  fileUploadStrategy      = uploadStrategyDictClass.makeObject() as FileUploadTemporaryStorageStrategy;
+        FileUploadTemporaryStorageResult    result;
+        DMFExecutionId                      executionId;        
+        ;
+        messageTypeTable = OMGMessageTypeTable::find(_inboundMessage.MessageTypeId);
+        if (!parameterContract)
+        {
+            parameterContract = FormJsonSerializer::deserializeObject(this.dataContractClass(), messageTypeTable.InboundSerializedHandlerContract ) as OMGInboundHandlerDataContract_DMFPackage;
+        }
+
+        result = fileUploadStrategy.uploadFile(memoryStream, _inboundMessage.MessageName);
+                
+        executionId = DataManagementDefinitionGroupEntity::ImportFromPackage(result.getDownloadUrl(), 
+                                                                             parameterContract.parmDefinitionGroupName(), 
+                                                                             '', 
+                                                                             true, 
+                                                                             parameterContract.parmOverwriteDMFImportDefinition(), 
+                                                                             messageTypeTable.Company);
+                
+        responseContract.parmProcessed(true);                
+        responseContract.parmExecutionId(executionId);
+        responseContract.parmProcessingStatus(OMGProcessingStatus::Processing);
+
+        return responseContract;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

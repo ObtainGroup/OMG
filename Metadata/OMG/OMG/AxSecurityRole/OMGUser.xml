@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxSecurityRole xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGUser</Name>
+	<Label>@OMG:OMGUser</Label>
+	<DirectAccessPermissions />
+	<Duties>
+		<AxSecurityDutyReference>
+			<Name>OMGInboundMessageProcessControllerExecute</Name>
+		</AxSecurityDutyReference>
+		<AxSecurityDutyReference>
+			<Name>OMGInboundMessageTableView</Name>
+		</AxSecurityDutyReference>
+		<AxSecurityDutyReference>
+			<Name>OMGMessageTypeTableView</Name>
+		</AxSecurityDutyReference>
+		<AxSecurityDutyReference>
+			<Name>OMGOutboundMessageProcessControllerExecute</Name>
+		</AxSecurityDutyReference>
+		<AxSecurityDutyReference>
+			<Name>OMGOutboundMessageTableView</Name>
+		</AxSecurityDutyReference>
+		<AxSecurityDutyReference>
+			<Name>OMGInboundMessageFetchControllerExecute</Name>
+		</AxSecurityDutyReference>
+		<AxSecurityDutyReference>
+			<Name>OMGUploadSingleMessageNew</Name>
+		</AxSecurityDutyReference>
+	</Duties>
+	<Privileges />
+	<SubRoles />
+</AxSecurityRole>

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGAzureContainerWriter</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Azure.Response;
+using Azure.Storage;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using Azure.Storage.Blobs.Specialized;
+using System.Threading;
+using Azure.Storage.Files;
+
+/// <summary>
+///The <c>OMGAzureStorageConnector</c> class handles connections to Azure Storage
+/// </summary>
+class OMGAzureContainerWriter
+{
+    str     connectionstr;
+        
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmConnectionStr</Name>
+				<Source><![CDATA[
+    public str parmConnectionStr(str _connectionstr = connectionstr)
+    {
+        connectionstr = _connectionstr;
+
+        return connectionstr;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createFromKeyVaultCertificate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiate and initialize the <c>OMGAzureStorageConnector</c> from a Key Vault secret.
+    /// The Key Vault secret in Azure must contain the Connections string to the storage account
+    /// </summary>
+    /// <param name = "_certificateRef">
+    /// Reference to the Key Vault secret.
+    /// </param>
+    /// <returns>The <c>OMGAzureStorageConnector</c> object.</returns>
+    public static OMGAzureContainerWriter createFromKeyVaultCertificate(KeyVaultCertificateRef _certificateRef)
+    {
+        OMGAzureContainerWriter     oMGAzureContainerWriter = OMGAzureContainerWriter::construct();
+        str                         connectionstr;
+        System.Exception            ex;
+        try
+        {
+            connectionstr = KeyVaultCertificateHelper::getManualSecretValue(_certificateRef);
+            oMGAzureContainerWriter.parmConnectionStr(connectionstr);
+        }
+        catch (ex)
+        {
+            throw Error("@OMG:CreateKeyVaultCertError");
+        }
+
+        return oMGAzureContainerWriter;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>construct</Name>
+				<Source><![CDATA[
+    public static OMGAzureContainerWriter construct()
+    {
+        return new OMGAzureContainerWriter();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>newConnectionStr</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiate and initialize the <c>OMGAzureStorageConnector</c> from a connection string.
+    /// </summary>
+    /// <param name = "_connectionstr">
+    /// The connections string used to connect to Azure storage.
+    /// </param>
+    /// <returns>The <c>OMGAzureStorageConnector</c> object.</returns>
+    public static OMGAzureContainerWriter newConnectionStr(str _connectionstr)
+    {
+        OMGAzureContainerWriter     oMGAzureContainerWriter = OMGAzureContainerWriter::construct();
+
+        oMGAzureContainerWriter.parmConnectionStr(_connectionstr);
+
+        return oMGAzureContainerWriter;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>writeStorageContainer</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Write files to a Azure storage container
+    /// </summary>
+    /// <param name = "_stream">The file as a stream</param>
+    /// <param name = "_fileName">The file name</param>
+    /// <param name = "_targetContainer">The target container to write the file to</param>
+    public void writeStorageContainer(System.IO.Stream          _stream,
+                                      str                       _fileName,
+                                      OMGAzureTargetContainer   _targetContainer)
+    {
+        BlobServiceClient           blobServiceClient       = new BlobServiceClient(this.parmConnectionStr());
+        BlobContainerClient         blobContainerClient     = blobServiceClient.GetBlobContainerClient(_targetContainer);        
+        BlobClient                  blobClient              = blobContainerClient.GetBlobClient(_fileName);
+        ;
+        
+        blobClient.upload(_stream);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

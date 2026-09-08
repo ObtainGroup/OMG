@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGAzureKeyVaultRefBaseAttribute</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Base attribute class for KeyVaultRef
+/// </summary>
+public abstract class OMGAzureKeyVaultRefBaseAttribute extends SysAttribute
+{                                                                        
+    public readonly str azureKeyVaultRefMethod;
+                                                                            
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    public void new(str _azureKeyVaultRefMethod = '')
+    {
+        azureKeyVaultRefMethod = _azureKeyVaultRefMethod;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

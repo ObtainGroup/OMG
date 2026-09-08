@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGAzureValidator</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Azure.Storage;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Specialized;
+using System.Threading;
+
+/// <summary>
+/// Class for validating Azure components
+/// </summary>
+class OMGAzureValidator
+{    
+    OMGDataContract_Azure       dataContract_Azure;
+    BlobServiceClient           blobServiceClient;    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmDataContract</Name>
+				<Source><![CDATA[
+    public OMGDataContract_Azure parmDataContract(OMGDataContract_Azure _dataContract_Azure = dataContract_Azure)
+    {
+        dataContract_Azure = _dataContract_Azure;
+        return dataContract_Azure;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>newValidation</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiates the class, sets the datacontract and calls init
+    /// </summary>
+    /// <param name = "_dataContract">The data contract</param>
+    /// <returns>The instantiated class</returns>
+    public static OMGAzureValidator newValidation(OMGDataContract_Azure    _dataContract)
+    {        
+        SysDictClass        sysDictValidationClass = new SysDictClass(_dataContract.validationClassId());
+        OMGAzureValidator   azureValidator;
+        ;
+
+        if (sysDictValidationClass)
+        {
+            azureValidator = sysDictValidationClass.makeObject();
+            azureValidator.parmDataContract(_dataContract);
+        }
+
+        return azureValidator;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiates the cloud storage account
+    /// </summary>
+    protected void init()
+    {
+        str connectionStr;
+        ;
+
+        connectionstr       = KeyVaultCertificateHelper::getManualSecretValue(this.parmDataContract().parmKeyVaultCertificateRef());
+        blobServiceClient   = new Azure.Storage.Blobs.BlobServiceClient(connectionstr);            
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateKeyVault</Name>
+				<Source><![CDATA[
+    private boolean validateKeyVault()
+    {
+        boolean     ret = true;
+        ;
+        if (!dataContract_Azure.parmKeyVaultCertificateRef())
+        {
+            ret = checkFailed("@OMG:KeyVaultCertMissing");
+        }
+        else
+        {
+            if (!KeyVaultCertificateHelper::getManualSecretValue(dataContract_Azure.parmKeyVaultCertificateRef(), false))
+            {
+                ret = checkFailed("@KeyVault_ManualSecret:UnableToFindManualSecretValue");
+            }
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates the keyVault and if that is ok, calls init
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    public boolean validate()
+    {
+        boolean     ret = this.validateKeyVault();
+        ;
+
+        if (ret)
+        {
+            this.init();
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

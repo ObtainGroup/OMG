@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGMessageProcessorDMF</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Processes message from OMGInboundMessageTable to a DMF import project
+/// </summary>
+class OMGMessageProcessorDMF extends OMGInboundMessageHandler implements OMGIInboundMessageHandler
+{
+    OMGInboundHandlerDataContract_DMF   parameterContract;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>dataContractClass</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// The data contract class
+    /// </summary>
+    /// <returns>The class id</returns>    
+    public ClassId dataContractClass()
+    {
+        return classNum(OMGInboundHandlerDataContract_DMF);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>skipTTSWarning</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Specifies if the warning for committing TTS should be skipped
+    /// </summary>
+    /// <returns>True if it should be skipped</returns>
+    public boolean skipTTSWarning()
+    {
+        return false;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>decreaseTTSLevel</Name>
+				<Source><![CDATA[
+    [SuppressBPWarning('BPErrorMethodUnbalancedTtsbeginCommit', 'DMF import requieres TTS-level to be zero')]
+    private int decreaseTTSLevel()
+    {
+        int currentTTsLevel = appl.ttsLevel();
+        int i;
+        if (currentTTsLevel > 1 && this.skipTTSWarning() == false)
+        {
+            warning(strFmt("@OMG:DMFTTsWarning", 1, currentTTsLevel));
+        }
+        while (i < currentTTsLevel)
+        {
+            ttscommit;
+            i++;
+        }
+
+        return currentTTsLevel;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>increaseTTSLevel</Name>
+				<Source><![CDATA[
+    [SuppressBPWarning('BPErrorMethodUnbalancedTtsbeginCommit', 'DMF import requieres TTS-level to be zero')]
+    private void increaseTTSLevel(int _levelsToIncrease)
+    {
+        int i;
+
+        while (i < _levelsToIncrease)
+        {
+            ttsbegin;
+            i++;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processMessage</Name>
+				<Source><![CDATA[
+    public OMGInboundMessageResponseContract processMessage(OMGInboundMessageTable    _inboundMessage)
+    {
+        OMGInboundMessageResponseContract   inboundMessageResponseContract;        
+        SharedServiceUnitFileID             fileId;
+        DMFDefinitionGroup                  definitionGroup;
+        DMFDefinitionGroupEntity            definitionGroupEntity;
+        DMFExecutionId                      executionId;
+        DMFDefinitionGroupExecution         execution;
+        DMFEntity                           entity;
+        FileUploadTemporaryStorageResult    result;
+        str                                 importEntityName;
+        System.IO.Stream                    memoryStream            = OMGInboundMessageTable::getMemoryStream(_inboundMessage);
+        SysDictClass                        uploadStrategyDictClass = new SysDictClass(className2Id('FileUploadTemporaryStorageStrategy'));
+        FileUploadTemporaryStorageStrategy  fileUploadStrategy      = uploadStrategyDictClass.makeObject() as FileUploadTemporaryStorageStrategy;        
+        ;
+        messageTypeTable = OMGMessageTypeTable::find(_inboundMessage.MessageTypeId);
+        if (!parameterContract)
+        {
+            parameterContract = FormJsonSerializer::deserializeObject(this.dataContractClass(), messageTypeTable.InboundSerializedHandlerContract ) as OMGInboundHandlerDataContract_DMF;
+        }
+
+        importEntityName    = parameterContract.parmEntityName();
+        entity              = DMFEntity::find(importEntityName);
+        Debug::assert(fileUploadStrategy != null);
+ 
+        result = fileUploadStrategy.uploadFile(memoryStream, _inboundMessage.MessageName);
+ 
+        if (result && result.getUploadStatus())
+        {
+            fileId = result.getFileId();
+            memoryStream.Dispose();
+            definitionGroup = DMFDefinitionGroup::find(parameterContract.parmDefinitionGroupName());
+
+            select firstonly definitionGroupEntity
+                where definitionGroupEntity.DefinitionGroup == definitionGroup.DefinitionGroupName
+                &&    definitionGroupEntity.Entity          == importEntityName;
+
+            executionId = DMFUtil::setupNewExecution(definitionGroup.DefinitionGroupName);
+
+            // Find execution
+            execution = DMFDefinitionGroupExecution::find(definitionGroup.DefinitionGroupName,
+                                                            definitionGroupEntity.Entity,
+                                                            executionId,
+                                                            true);
+            
+            execution.FilePath      = fileId;
+            execution.IsTransformed = NoYes::No;
+            
+            if (entity.EntityType == DMFEntityTypes::CompositEntity)
+            {
+                execution.ExecuteTargetStep = NoYes::Yes;                
+            }
+            else
+            {
+                execution.ExecuteTargetStep = NoYes::No;
+            }
+
+            execution.update();
+
+            setPrefix(strFmt("@SYS73667", _inboundMessage.MessageName));
+
+            // Import the file via quick import DMF
+            int ttsLevelDecreased = this.decreaseTTSLevel();
+
+            // Determine if source to target should happen on initial import based on if we are in batch or not.
+            boolean executeTargetDuringInitialImport = !BatchHeader::isExecutingInBatch();
+
+            DMFQuickImportExport::doPGImport(definitionGroup.DefinitionGroupName, executionId, executeTargetDuringInitialImport);
+            
+            if (entity.EntityType == DMFEntityTypes::Entity)    
+            {
+                // PreTargetProcessing
+                this.preTargetProcessing(definitionGroup.DefinitionGroupName, executionId, importEntityName, _inboundMessage);
+
+                // Process to target
+                this.processToTarget(definitionGroup.DefinitionGroupName, executionId, importEntityName, _inboundMessage);
+            }
+            else if (!executeTargetDuringInitialImport)
+            {
+                // If we still need to move from source to target, kick off that process now.
+                DMFDefinitionGroupExecution definitionGroupExecution;
+
+                // Setting all entities to 'IsSelected = Yes'
+                update_recordset definitionGroupExecution
+                    setting IsSelected = NoYes::Yes
+                    where definitionGroupExecution.DefinitionGroup  == definitionGroup.DefinitionGroupName   &&
+                          definitionGroupExecution.ExecutionId      == executionId;
+
+                DMFWriteExecutionParameters executionParameters = DMFWriteExecutionParameters::construct();
+                executionParameters.parmDefinitionGroup(definitionGroup.DefinitionGroupName);
+                executionParameters.parmsourceTarget(DMFSourceTarget::Source);                
+                executionParameters.parmSelectedData(NoYes::Yes);
+                executionParameters.parmErrorStatus(NoYes::No);
+                executionParameters.parmSkipFormNavigation(NoYes::Yes);
+
+                DMFExecution dmfExecution = DMFExecution::find(executionId, true);
+                Args args = new Args();
+                args.record(dmfExecution);
+                args.parmObject(executionParameters);
+                args.parmEnum(NoYes::No);
+
+                new MenuFunction(menuItemActionStr(DMFEntityWriterBatch), MenuItemType::Action).run(args);
+            }
+            else    
+            {
+                // Post process to target
+                this.postTargetProcessing(definitionGroup.DefinitionGroupName, executionId, importEntityName, _inboundMessage);
+            }
+
+            this.increaseTTSLevel(ttsLevelDecreased);
+
+            // Deletes file
+            result.deleteResult();
+            
+            inboundMessageResponseContract = this.checkExecutionStatus(_inboundMessage.RecId, 
+                                                                       definitionGroup.DefinitionGroupName, 
+                                                                       definitionGroupEntity.Entity, 
+                                                                       executionId,
+                                                                       executeTargetDuringInitialImport);
+        }
+
+        return  inboundMessageResponseContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>checkExecutionStatus</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Checks the execution status in DMF
+    /// </summary>
+    /// <param name = "_inboundMessageTableRecId">The RecId of the processed inbound message</param>
+    /// <param name = "_definitionGroup">The DMF definition group</param>
+    /// <param name = "_entity">The entity</param>
+    /// <param name = "_executionId">The Id of the DMF execution</param>
+    /// <param name = "_executeTargetDuringInitialImport">Tells if the initial import was executing the target step</param>
+    /// <returns>A response contract bearing the status and any error messages found</returns>
+    public OMGInboundMessageResponseContract checkExecutionStatus(RecId                     _inboundMessageTableRecId,
+                                                                  DMFDefinitionGroupName    _definitionGroup,
+                                                                  DMFEntityName             _entity,
+                                                                  DMFExecutionId            _executionId,
+                                                                  boolean                   _executeTargetDuringInitialImport)
+    {
+        OMGInboundMessageResponseContract   responseContract    = new OMGInboundMessageResponseContract();
+        DMFDefinitionGroupExecution         execution           = DMFDefinitionGroupExecution::find(_definitionGroup, _entity, _executionId);        
+        DMFErrorMessage                     errorMessage;                
+        ;
+        
+        if (!_executeTargetDuringInitialImport)
+        {
+            // If we did not run the target step in the initial call, we cannot ask DMF for at status right now
+            // All we know at this point is that it is executing
+            responseContract.parmProcessed(true);
+            responseContract.parmExecutionId(_executionId);
+            responseContract.parmProcessingStatus(OMGProcessingStatus::Processing);
+        }
+        else
+        {
+            if (execution.GetExecutionSummaryStatus() == DMFExecutionSummaryStatus::Succeeded)
+            {
+                responseContract.parmResponse(strFmt("@OMG:ExectutionResult", _executionId, execution.NumOfTargetUpdated, execution.NumOfTargetNew));
+                responseContract.parmProcessedOk(true);
+            }
+            else
+            {
+                errorMessage = OMGInboundMessageTable::getDMFError(_executionId, _definitionGroup);
+            
+                responseContract.parmProcessingStatus(OMGProcessingStatus::Error);
+                responseContract.parmResponse(errorMessage);
+                responseContract.parmProcessedOk(false);
+            }
+        }
+        return responseContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>preTargetProcessing</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Placeholder method for custom code in classes that extends this
+    /// </summary>
+    /// <param name = "_definitionGroupName">The name of the DMF definition group</param>
+    /// <param name = "_executionId">The DMF executionId</param>
+    /// <param name = "_entityName">The name of the entity</param>
+    /// <param name = "_inboundMessage">The inbound message</param>
+    public void preTargetProcessing(DMFDefinitionGroupName      _definitionGroupName,
+                                    DMFExecutionId              _executionId,
+                                    DMFEntityName               _entityName,
+                                    OMGInboundMessageTable      _inboundMessage)
+    {
+        // Extension point for custom code
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processToTarget</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Processes the staging table records to the target
+    /// </summary>
+    /// <param name = "_definitionGroupName">The name of the DMF definition group</param>
+    /// <param name = "_executionId">The DMF executionId</param>
+    /// <param name = "_entityName">The name of the entity</param>
+    /// <param name = "_inboundMessage">The inbound message</param>
+    public void processToTarget(DMFDefinitionGroupName  _definitionGroupName,
+                                DMFExecutionId          _executionId,
+                                DMFEntityName           _entityName,
+                                OMGInboundMessageTable  _inboundMessage)
+    {
+        DMFDefinitionGroupExecution     dMFDefinitionGroupExecution;
+        DMFEntityWriter                 dMFEntityWriter;
+        DMFExecution                    dMFExecution    = DMFExecution::find(_executionId);
+        ;
+                
+        if (!dMFExecution)
+        {
+            throw Error(strFmt("@OMG:DMFExecutionNotFound", _executionId));
+        }
+
+        ttsbegin;
+        
+        dMFDefinitionGroupExecution = DMFDefinitionGroupExecution::find(_definitionGroupName, _entityName, _executionId, true);
+
+        if (!dMFDefinitionGroupExecution)
+        {
+            throw Error ("@OMG:DMFDataProjectExecutionNotFound");
+        }
+        
+        dMFDefinitionGroupExecution.IsSelected = NoYes::Yes;
+        dMFDefinitionGroupExecution.update();
+
+        ttscommit;
+
+        
+        dMFEntityWriter = new DMFEntityWriter();
+        dMFEntityWriter.parmDMFExecution(dMFExecution);
+        dMFEntityWriter.saveLast();
+        
+        dMFEntityWriter.runOperation(); 
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>postTargetProcessing</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Placeholder method for custom code in classes that extends this
+    /// </summary>
+    /// <param name = "_definitionGroupName">The name of the DMF definition group</param>
+    /// <param name = "_executionId">The DMF executionId</param>
+    /// <param name = "_entityName">The name of the entity</param>
+    /// <param name = "_inboundMessage">The inbound message</param>
+    public void postTargetProcessing(DMFDefinitionGroupName  _definitionGroupName,
+                                     DMFExecutionId          _executionId,
+                                     DMFEntityName           _entityName,
+                                     OMGInboundMessageTable  _inboundMessage)
+    {
+        // Extension point for custom code
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>description</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Description of class
+    /// </summary>
+    /// <returns>The description</returns>
+    public static Description description()
+    {
+        return "@OMG:DMFProcessing";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateMessageTypeParameters</Name>
+				<Source><![CDATA[
+    public boolean validateMessageTypeParameters(OMGMessageTypeTable  _messageTypeTable)                                                 
+    {                
+        boolean     ret = true;
+        ;
+
+        parameterContract = FormJsonSerializer::deserializeObject(this.dataContractClass(), _messageTypeTable.InboundSerializedHandlerContract) as OMGInboundHandlerDataContract_DMF;
+
+        if (!parameterContract)
+        {
+            ret = checkFailed("@OMG:DeserializeParameterError");
+        }
+        else if (!parameterContract.validate())
+        {            
+            ret = checkFailed(OMGFeatures::getErrorStr());
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundHandlerDataContract_DMF</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Base data contract for DMF parameters
+/// </summary>
+[DataContract]
+class OMGInboundHandlerDataContract_DMF
+{
+    OMGDMFImportDefinitionGroup         definitionGroupName;
+    OMGDMFDefinitionGroupEntityName     entityName;
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>validationClassId</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// The class id for the corresponding validator class
+    /// </summary>
+    /// <returns>The class id</returns>
+    public ClassId validationClassId()
+    {
+        return classNum(OMGContractValidator_DMF);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDefinitionGroupName</Name>
+				<Source><![CDATA[
+    [DataMember, OMGDMFDefinitionGroupAttribute]
+    public OMGDMFImportDefinitionGroup parmDefinitionGroupName(OMGDMFImportDefinitionGroup _definitionGroupName = definitionGroupName)
+    {
+        definitionGroupName = _definitionGroupName;
+
+        return definitionGroupName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmEntityName</Name>
+				<Source><![CDATA[
+    [DataMember, OMGDMFDefinitionGroupEntityAttribute]
+    public OMGDMFDefinitionGroupEntityName parmEntityName(OMGDMFDefinitionGroupEntityName _entityName = entityName)
+    {
+        entityName = _entityName;
+
+        return entityName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates the contract values
+    /// </summary>
+    /// <returns>True if ok</returns>
+    public boolean validate()
+    {
+        return OMGContractValidator_DMF::newValidation(this).validate();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

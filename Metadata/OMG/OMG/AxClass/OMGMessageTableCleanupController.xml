@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGMessageTableCleanupController</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Controller class for OMG message cleanup
+/// </summary>
+[SysOperationJournaledParametersAttribute(true)]
+class OMGMessageTableCleanupController extends SysOperationServiceController
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiates the class
+    /// </summary>
+    protected void new()
+    {
+        super(classStr(OMGMessageTableCleanupService), methodStr(OMGMessageTableCleanupService, cleanup), SysOperationExecutionMode::Synchronous);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>construct</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Constructs the class and set the execution mode
+    /// </summary>
+    /// <param name = "_executionMode">The execution mode. Default is SysOperationExecutionMode::Asynchronous</param>
+    /// <returns>The instantiated class</returns>
+    public static OMGMessageTableCleanupController construct(SysOperationExecutionMode _executionMode = SysOperationExecutionMode::Synchronous)
+    {
+        OMGMessageTableCleanupController controller;
+        ;
+
+        controller = new OMGMessageTableCleanupController();
+        controller.parmExecutionMode(_executionMode);
+
+        return controller;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiates the class, sets the execution mode and starts the operation
+    /// </summary>
+    /// <param name = "_args">The args from the caller</param>
+    public static void main(Args _args)
+    {
+        OMGMessageTableCleanupController controller;
+        ;
+
+        controller = OMGMessageTableCleanupController::construct();
+        controller.parmArgs(_args);
+        controller.startOperation();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>defaultCaption</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Sets the caption
+    /// </summary>
+    /// <returns>The caption of the class</returns>
+    public ClassDescription defaultCaption()
+    {
+        return "@OMG:CleanupProcessedMessages";
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

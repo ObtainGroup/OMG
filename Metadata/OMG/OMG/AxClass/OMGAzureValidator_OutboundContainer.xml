@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGAzureValidator_OutboundContainer</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Azure.Storage.Blobs;
+
+/// <summary>
+/// Validation class for outbound container
+/// </summary>
+class OMGAzureValidator_OutboundContainer extends OMGAzureValidator
+{       
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>validateOutboundContainer</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates the azure components of outbound azure container
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    protected boolean validateOutboundContainer()
+    {
+        OMGOutboundDataContract_AzureContainer  dataContract = this.parmDataContract();
+        BlobContainerClient                     blobContainerClient;
+        boolean                                 ret = true;
+        ;
+
+        if (!dataContract.parmTargetContainer())
+        {
+            ret = checkFailed("@OMG:TargetContainerMissing");
+        }
+
+        if (ret)
+        {            
+            blobContainerClient = blobServiceClient.GetBlobContainerClient(dataContract.parmTargetContainer());
+                       
+            if (!OMGFeatures::checkBlobContainerExist(blobContainerClient))
+            {
+                ret = checkFailed("@OMG:TargetContainerDoesNotExist", dataContract.parmTargetContainer());
+            }            
+        }
+
+        if (!dataContract.parmFileType())
+        {
+            ret = checkFailed("@OMG:FileTypeMissing");
+        }
+
+        if (!dataContract.parmFilenamePattern())
+        {
+            ret = checkFailed("@OMG:FilenamePatternMissing");
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Calls super, and if that is ok checks the outbound container
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    public boolean validate()
+    {
+        boolean ret = super();
+
+        ret = ret && this.validateOutboundContainer();
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

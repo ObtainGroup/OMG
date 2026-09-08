@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxEnum xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGDirection</Name>
+	<Label>@OMG:Direction</Label>
+	<EnumValues>
+		<AxEnumValue>
+			<Name>Inbound</Name>
+			<Label>@OMG:Inbound</Label>
+		</AxEnumValue>
+		<AxEnumValue>
+			<Name>Outbound</Name>
+			<Label>@OMG:Outbound</Label>
+			<Value>1</Value>
+		</AxEnumValue>
+	</EnumValues>
+</AxEnum>

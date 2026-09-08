@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGUploadSingleMessageService</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Service class for manual import of single messages
+/// </summary>
+class OMGUploadSingleMessageService extends SysOperationServiceBase
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>process</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Imports the file
+    /// </summary>
+    /// <param name = "_dataContract">Data contract holding the parameters and the file stream</param>
+    public void process(OMGUploadSingleMessageContract _dataContract)
+    {        
+        System.IO.MemoryStream  memoryStream;
+        System.IO.StreamReader  streamReader;
+        System.String           fileContent;
+        OMGInboundMessageTable  inboundMessageTable;
+        ;
+                
+        try
+        {
+            ttsbegin;
+            memoryStream = _dataContract.parmFileStream();
+
+            if (_dataContract.parmBase64Encode())
+            {                        
+                if (memoryStream.CanSeek)
+                {
+                    memoryStream.Seek(0, System.IO.SeekOrigin::Begin);
+                }
+            
+                System.Byte[] bytes = memoryStream.ToArray();
+            
+                fileContent = System.Convert::ToBase64String(bytes);
+            }
+            else
+            {            
+                if (memoryStream.CanSeek)
+                {
+                    memoryStream.Seek(0, System.IO.SeekOrigin::Begin);
+                }
+                streamReader    = new System.IO.StreamReader(memoryStream, System.Text.Encoding::GetEncoding(str2Int(_dataContract.parmCodePage())));
+                fileContent     = streamReader.ReadToEnd();
+                streamReader.Close();
+                streamReader.Dispose();
+            }
+
+            if (fileContent)
+            {
+                OMGMessageGUID  existingMessageGUID = _dataContract.parmMessageGUID();
+
+                if (existingMessageGUID)
+                {
+                    // Update existing message
+                    inboundMessageTable = OMGInboundMessageTable::find(existingMessageGUID, true);
+                    
+                    if (inboundMessageTable)
+                    {
+                        inboundMessageTable.Message = fileContent;
+                        inboundMessageTable.update();
+
+                        Info(strFmt("@OMG:MessageUpdated", existingMessageGUID));
+                    }
+                }
+                else
+                {
+                    // Create inbound message
+                    inboundMessageTable = OMGInboundMessageTable::createInboundMessage(_dataContract.parmMesageName(),
+                                                                                       _dataContract.parmMessageTypeId(),
+                                                                                       fileContent,
+                                                                                       _dataContract.parmBase64Encode(),
+                                                                                        curExt());
+                                  
+                    info(strFmt("@OMG:InboundMessageCreated", inboundMessageTable.MessageName));
+                }
+            }        
+
+            ttscommit;
+        }
+
+        catch (Exception::Error)
+        {
+            throw Error("@OMG:UploadCancelled");
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

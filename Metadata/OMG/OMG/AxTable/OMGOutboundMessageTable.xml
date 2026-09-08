@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundMessageTable</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class OMGOutboundMessageTable extends common
+{   
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>findRecId</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Finds a record in the outbound message table
+    /// </summary>
+    /// <param name = "_recId">The record Id.</param>
+    /// <param name = "_forUpdate">Should the record be selected for update?</param>
+    /// <returns>The record found</returns>
+    public static OMGOutboundMessageTable findRecId(RecId    _recId, 
+                                                    boolean  _forUpdate = false)
+    {
+        OMGOutboundMessageTable outboundMsgTable;
+        ;
+
+        outboundMsgTable.selectForUpdate(_forUpdate);
+    
+        if (_recId)
+        {
+            select firstonly outboundMsgTable
+                where outboundMsgTable.RecId == _recId;
+        }
+    
+        return outboundMsgTable;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>find</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Finds a record in the outbound message table
+    /// </summary>
+    /// <param name = "_messageGUID">The message GUID</param>
+    /// <param name = "_forUpdate">Should the record be selected for update?</param>
+    /// <returns>A record</returns>
+    public static OMGOutboundMessageTable find(OMGMessageGUID   _messageGUID,
+                                               boolean          _forUpdate = false)
+    {
+        OMGOutboundMessageTable outboundMsgTable;
+        ;
+
+        outboundMsgTable.selectForUpdate(_forUpdate);
+    
+        if (_messageGUID)
+        {
+            select firstonly outboundMsgTable
+                where outboundMsgTable.MessageGUID == _messageGUID;
+        }
+    
+        return outboundMsgTable;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>logError</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Logs a processing error
+    /// </summary>
+    /// <param name = "_outboundMessageTableRecId">The RecId of the record in question</param>
+    /// <param name = "_errorLog">The error string</param>
+    public static void logError(RecId                   _outboundMessageTableRecId,
+                                OMGTransactionErrorLog  _errorLog)
+    {
+        OMGOutboundMessageTable  oMGOutboundMessageTable;
+        ;
+
+        ttsbegin;
+
+        oMGOutboundMessageTable = OMGOutboundMessageTable::findRecId(_outboundMessageTableRecId, true);
+
+        if (oMGOutboundMessageTable)
+        {
+            oMGOutboundMessageTable.MessageErrorLog  = _errorLog;
+            oMGOutboundMessageTable.MessageStatus    = OMGProcessingStatus::Error;
+            oMGOutboundMessageTable.update();
+        }
+
+        ttscommit;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>update</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Checks if the message status changes from error to ready. If so, the errorLog field is cleared
+    /// </summary>
+    public void update()
+    {
+        OMGOutboundMessageTable     outboundMessageTable_Orig = this.orig();
+        ;
+
+        if (outboundMessageTable_Orig.MessageStatus == OMGProcessingStatus::Error   &&
+            this.MessageStatus                      == OMGProcessingStatus::Ready)
+        {
+            this.MessageErrorLog = '';
+        }
+
+        super();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createOutboundMessage</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Creates an outbound message
+    /// </summary>
+    /// <param name = "_messageName">The name of the message</param>
+    /// <param name = "_messageTypeId">The message type</param>
+    /// <param name = "_message">The message content</param>
+    /// <param name = "_base64Encoded">Is the content base64 encoded</param>
+    /// <param name = "_company">The company the message should be processed in</param>
+    /// <param name = "_messageGuid">The message GUIS</param>
+    /// <param name = "_sourceDateTime">The source date/time</param>
+    /// <returns>The created record</returns>    
+    public static OMGOutboundMessageTable createOutboundMessage(OMGMessageName      _messageName,
+                                                                OMGMessageTypeId    _messageTypeId,
+                                                                OMGMessage          _message,
+                                                                NoYesId             _base64Encoded  = NoYes::No,
+                                                                DataAreaId          _company        = curExt(),
+                                                                OMGMessageGUID      _messageGuid    = newGuid(),
+                                                                OMGSourceDateTime   _sourceDateTime = DateTimeUtil::getSystemDateTime())
+    {
+        OMGOutboundMessageTable     outboundMessageTable;
+        ;
+        
+        outboundMessageTable.clear();
+        outboundMessageTable.initValue();
+        outboundMessageTable.MessageStatus  = OMGProcessingStatus::Ready;
+        outboundMessageTable.MessageName    = _messageName;        
+        outboundMessageTable.MessageTypeId  = _messageTypeId;
+        outboundMessageTable.Message        = _message;
+        outboundMessageTable.Base64Encoded  = _base64Encoded;
+        outboundMessageTable.SourceCompany  = _company;
+        outboundMessageTable.MessageGUID    = _messageGUID;        
+        outboundMessageTable.SourceDateTime = _sourceDateTime;
+        outboundMessageTable.insert();
+
+        return outboundMessageTable;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>generateFilename</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Formats a filename
+    /// </summary>
+    /// <param name = "_outboundMessageTable">The outbound message</param>    
+    /// <param name = "_dataContract">The data contract</param>
+    /// <returns>The filename</returns>
+    public static Filename generateFilename(OMGOutboundMessageTable         _outboundMessageTable,                                       
+                                            OMGOutboundDataContract_Azure   _dataContract)
+    {
+        Filename            filename;
+        FilenameType        filenameType;
+        OMGFilenamePattern  fileNamePattern = _dataContract.parmFilenamePattern();
+        ;
+
+        /*
+        %1 = MessageGUID
+        %2 = MessageTypeId
+        %3 = MessageName
+        %4 = SourceCompany
+        %5 = SourceDateTime
+        %6 = ExecutionDateTime (timenow of export)
+        %7 = TargetDirectory        
+        */
+
+        filename = strFmt(fileNamePattern, _outboundMessageTable.MessageGUID, 
+                                           _outboundMessageTable.MessageTypeId, 
+                                           _outboundMessageTable.MessageName,
+                                           _outboundMessageTable.SourceCompany,
+                                           _outboundMessageTable.SourceDateTime,
+                                           DateTimeUtil::getSystemDateTime(),
+                                           _outboundMessageTable.TargetDirectory);
+
+        // Removing illegal characters
+        filename = strRem(filename, '\\');
+        filename = strRem(filename, '/');
+        filename = strRem(filename, ':');
+        filename = strRem(filename, '*');
+        filename = strRem(filename, '?');
+        filename = strRem(filename, '"');
+        filename = strRem(filename, '<');
+        filename = strRem(filename, '>');
+        filename = strRem(filename, '|');
+
+        filenameType = _outboundMessageTable.FilenameType ? _outboundMessageTable.FilenameType : _dataContract.parmFileType();
+
+        // Making sure that the filenameType starts with a '.' ex .xml
+        if (!strScan(filenameType, '.', 1, 1))
+        {
+            filenameType = '.' + filenameType;
+        }
+
+        return filename + filenameType;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateStatus</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Updates the status on a outbound message
+    /// </summary>
+    /// <param name = "_ourboundMessageRecId">The RecId of the message in question</param>
+    /// <param name = "_messageTypeTable">The message type</param>
+    /// <param name = "_processingStatus">The new status</param>
+    public static void updateStatus(RecId               _ourboundMessageRecId,
+                                    OMGMessageTypeTable _messageTypeTable,    
+                                    OMGProcessingStatus _processingStatus)
+    {
+        OMGOutboundMessageTable     outboundMessageTable;
+        ;
+
+        ttsbegin;
+
+        outboundMessageTable = OMGOutboundMessageTable::findRecId(_ourboundMessageRecId, true);
+
+        if (outboundMessageTable)
+        {
+            if (_processingStatus == OMGProcessingStatus::Processed && _messageTypeTable.RequestRetentionPeriod == 0)
+            {
+                outboundMessageTable.delete();
+            }
+            else
+            {
+                outboundMessageTable.MessageStatus = _processingStatus;
+                outboundMessageTable.update();
+            }
+        }
+
+        ttscommit;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<DeveloperDocumentation>@OMG:OMGOutboundMessageTableDevDoc</DeveloperDocumentation>
+	<FormRef>OMGOutboundMessageTable</FormRef>
+	<Label>@OMG:OutboundMessages</Label>
+	<SubscriberAccessLevel>
+		<Read>Allow</Read>
+	</SubscriberAccessLevel>
+	<TitleField1>MessageTypeId</TitleField1>
+	<TitleField2>MessageGUID</TitleField2>
+	<AllowRowVersionChangeTracking>Yes</AllowRowVersionChangeTracking>
+	<CreatedBy>Yes</CreatedBy>
+	<CreatedDateTime>Yes</CreatedDateTime>
+	<ModifiedBy>Yes</ModifiedBy>
+	<ModifiedDateTime>Yes</ModifiedDateTime>
+	<PrimaryIndex>MessageGUIDIdx</PrimaryIndex>
+	<ReplacementKey>MessageGUIDIdx</ReplacementKey>
+	<SaveDataPerCompany>No</SaveDataPerCompany>
+	<DeleteActions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>MessageTypeId</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MessageGUID</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MessageName</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Message</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>SourceCompany</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>SourceDateTime</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MessageStatus</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MessageErrorLog</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Base64Encoded</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>FilenameType</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>MessageGUID</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>All</Name>
+			<Label>@SYS104259</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>MessageTypeId</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MessageGUID</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MessageName</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Message</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>SourceCompany</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>SourceDateTime</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MessageStatus</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MessageErrorLog</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Base64Encoded</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>TargetDirectory</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>MessageTypeId</Name>
+			<ExtendedDataType>OMGMessageTypeId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldGuid">
+			<Name>MessageGUID</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>OMGMessageGUID</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>MessageName</Name>
+			<ExtendedDataType>OMGMessageName</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>Message</Name>
+			<ExtendedDataType>OMGMessage</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>SourceCompany</Name>
+			<ExtendedDataType>DataAreaId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldUtcDateTime">
+			<Name>SourceDateTime</Name>
+			<ExtendedDataType>OMGSourceDateTime</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>MessageStatus</Name>
+			<EnumType>OMGProcessingStatus</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>MessageErrorLog</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>OMGMessageErrorLog</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>Base64Encoded</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>OMGBase64Encoded</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>TargetDirectory</Name>
+			<ExtendedDataType>OMGTargetDirectory</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>FilenameType</Name>
+			<ExtendedDataType>FilenameType</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes>
+		<AxTableIndex>
+			<Name>MessageGUIDIdx</Name>
+			<AlternateKey>Yes</AlternateKey>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>MessageGUID</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+		<AxTableIndex>
+			<Name>TypeStatusDateTimeIdx</Name>
+			<AllowDuplicates>Yes</AllowDuplicates>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>MessageTypeId</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>MessageStatus</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>CreatedDateTime</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+	</Indexes>
+	<Mappings />
+	<Relations>
+		<AxTableRelation>
+			<Name>OMGMessageTypeTable</Name>
+			<Cardinality>ZeroMore</Cardinality>
+			<OnDelete>Restricted</OnDelete>
+			<RelatedTable>OMGMessageTypeTable</RelatedTable>
+			<RelatedTableCardinality>ExactlyOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>MessageTypeId</Name>
+					<Field>MessageTypeId</Field>
+					<RelatedField>MessageTypeId</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+	</Relations>
+	<StateMachines />
+</AxTable>

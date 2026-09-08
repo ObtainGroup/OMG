@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGApplicationInsightsProperties</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// OMG Application Insights Properties
+/// </summary>
+public static class OMGApplicationInsightsProperties
+{
+    public static const container MessageTypeId = ['MessageTypeId', SysApplicationInsightsComplianceDataType::CustomerContent];
+    public static const container Duration = ['Duration', SysApplicationInsightsComplianceDataType::CustomerContent];
+    public static const container MessageCount = ['MessageCount', SysApplicationInsightsComplianceDataType::CustomerContent];
+    public static const container ErrorCount = ['ErrorCount', SysApplicationInsightsComplianceDataType::CustomerContent];
+    public static const container MessageSize = ['MessageSize', SysApplicationInsightsComplianceDataType::CustomerContent];
+    public static const container ErrorMessage = ['ErrorMessage', SysApplicationInsightsComplianceDataType::CustomerContent];
+    public static const container MessageId = ['MessageId', SysApplicationInsightsComplianceDataType::CustomerContent];
+}
+]]></Declaration>
+		<Methods />
+	</SourceCode>
+</AxClass>

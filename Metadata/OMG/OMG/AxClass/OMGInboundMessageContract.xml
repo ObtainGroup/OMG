@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundMessageContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Contract class for importing messages
+/// </summary>
+[DataContract]
+public class OMGInboundMessageContract
+{
+    OMGMessageGUID      messageGUID;
+    OMGMessageName      messageName;
+    OMGMessageTypeId    messageTypeId;
+    str                 message;
+    DataAreaId          company;
+    OMGBase64Encoded    base64Encoded;
+    TransDateTime       sourceDateTime;
+    boolean             decodeOnInsert;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmBase64Encoded</Name>
+				<Source><![CDATA[
+    [DataMember('Base64Encoded')]
+    public OMGBase64Encoded parmBase64Encoded(OMGBase64Encoded    _base64Encoded = base64Encoded)
+    {
+        base64Encoded = _base64Encoded;
+        return base64Encoded;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDecodeOnInsert</Name>
+				<Source><![CDATA[
+    [DataMember('DecodeOnInsert')]
+    public boolean parmDecodeOnInsert(boolean   _decodeOnInsert = decodeOnInsert)
+    {
+        decodeOnInsert = _decodeOnInsert;
+        return decodeOnInsert;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCompany</Name>
+				<Source><![CDATA[
+    [DataMember('Company')]
+    public DataAreaId parmCompany(DataAreaId    _company = company)
+    {
+        company = _company;
+        return company;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMessageGUID</Name>
+				<Source><![CDATA[
+    [DataMember('MessageGUID')]
+    public OMGMessageGUID parmMessageGUID(OMGMessageGUID    _messageGUID = messageGUID)
+    {
+        messageGUID = _messageGUID;
+        return messageGUID;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMessageName</Name>
+				<Source><![CDATA[
+    [DataMember('Name')]
+    public OMGMessageName parmMessageName(OMGMessageName    _messageName = messageName)
+    {
+        messageName = _messageName;
+        return messageName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMessageTypeId</Name>
+				<Source><![CDATA[
+    [DataMember('MessageTypeId')]
+    public OMGMessageTypeId parmMessageTypeId(OMGMessageTypeId _messageTypeId  = messageTypeId)
+    {
+        messageTypeId = _messageTypeId;
+        return messageTypeId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMessage</Name>
+				<Source><![CDATA[
+    [DataMember('Message')]
+    public str parmMessage(str    _message = message)
+    {
+        message = _message;
+        return message;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmSourceDateTime</Name>
+				<Source><![CDATA[
+    [DataMember('SourceDateTime')]
+    public TransDateTime parmSourceDateTime(TransDateTime    _sourceDateTime = sourceDateTime)
+    {
+        sourceDateTime = _sourceDateTime;
+        return sourceDateTime;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

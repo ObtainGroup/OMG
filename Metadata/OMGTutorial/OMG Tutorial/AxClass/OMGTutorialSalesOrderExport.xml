@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGTutorialSalesOrderExport</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+class OMGTutorialSalesOrderExport
+{
+}
+
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    public static void main(Args _args)
+    {
+        System.IO.StringWriter          stringWriter;
+        Newtonsoft.Json.JsonTextWriter  jsonWriter;
+        CustTable                       custTable;
+        OMGOutboundMessageTable         outboundMessageTable;
+        ; 
+         
+        while select AccountNum, BankAccount, Party from custTable
+            where custTable.CustGroup == '20'
+        {      
+            stringWriter       = new System.IO.StringWriter();
+            jsonWriter         = new Newtonsoft.Json.JsonTextWriter(stringWriter);
+
+            jsonWriter.WriteStartObject();
+            jsonWriter.WritePropertyName("AccountNum");
+            jsonWriter.WriteValue(custTable.AccountNum);
+            jsonWriter.WritePropertyName("Name");
+            jsonWriter.WriteValue(custTable.nameAlias());
+            jsonWriter.WritePropertyName("BankAccount");
+            jsonWriter.WriteValue(custTable.BankAccount);
+            jsonWriter.WriteEndObject();
+                 
+            outboundMessageTable.clear();
+            outboundMessageTable.MessageGUID        = newGuid();
+            outboundMessageTable.MessageTypeId      = "MyCustomMessageType";
+            outboundMessageTable.SourceCompany      = curExt();
+            outboundMessageTable.SourceDateTime     = DateTimeUtil::getSystemDateTime();
+            outboundMessageTable.MessageName        = custTable.AccountNum;
+            outboundMessageTable.Message            = stringWriter.ToString();
+            outboundMessageTable.TargetDirectory    = custTable.AccountNum;
+            outboundMessageTable.insert();
+        }
+
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundMessageHandler</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Base class for inbound message handling
+/// </summary>
+class OMGInboundMessageHandler extends SysOperationFrameworkService
+{        
+    OMGProcessingContract               processingContract;
+    OMGInboundMessageTable              inboundMessageTable;
+    OMGInboundMessageResponseContract   response;
+    OMGMessageTypeTable                 messageTypeTable;
+    Counter                             processedCounter;
+    Counter                             errorCounter;       
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>processOperation</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Checks the handler parameters and kicks off the processing of messages
+    /// </summary>
+    /// <param name = "_processingContract">A data contract with the message type and a container with the selected records</param>
+    public void processOperation(OMGProcessingContract  _processingContract)
+    {        
+        boolean         allOk = true;
+        container       recordContainer = _processingContract.parmRecordContainer();
+        TimeOfDay       startTime   = DateTimeUtil::getTimeNow(DateTimeUtil::getUserPreferredTimeZone());
+        TimeOfDay       endTime;
+        ;
+       
+        processedCounter = 0;
+         
+        messageTypeTable = OMGMessageTypeTable::find(_processingContract.parmMessageTypeId());
+
+        this.parmProcessingContract(_processingContract);
+
+        if (!this.validateInboundHandlerParameters())
+        {
+            throw Error(strFmt("@OMG:HandlerParameterError", _processingContract.parmMessageTypeId()));
+        }
+        
+        // Update status on inbound messages
+        OMGInboundMessageTable::UpdateMessageStatus(_processingContract.parmMessageTypeId());
+
+        if (recordContainer != conNull())
+        {
+            // Run selected records
+            allOk = this.runSelection();
+        }
+        else
+        {
+            allOk = this.runAll();
+        }
+       
+        if (!allOk)
+        {            
+            Error(strFmt("@OMG:ProcessingErrorEncountered", _processingContract.parmMessageTypeId()));
+        }
+
+        endTime = DateTimeUtil::getTimeNow(DateTimeUtil::getUserPreferredTimeZone());
+
+        if (processedCounter)
+        {
+            info(strFmt("@OMG:ProcessedMessagesTypeInfo", processedCounter, _processingContract.parmMessageTypeId(), endTime-startTime));
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runAll</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Processes all 'ready' inbound messages
+    /// </summary>
+    /// <returns>True if all went ok</returns>
+    public boolean runAll()
+    {
+        boolean     ok = true;
+        ;
+
+        while select inboundMessageTable
+            where inboundMessageTable.MessageStatus == OMGProcessingStatus::Ready   &&
+                  inboundMessageTable.MessageTypeId == this.parmProcessingContract().parmMessageTypeId()
+        {
+            response = OMGInboundMessageTable::processMessage(inboundMessageTable);
+            
+            if (response.parmProcessedOk() == false)
+            {
+                // Error was encountered. The message is set to status error
+                ok = false;
+                errorCounter++;
+            }
+            processedCounter++;
+        }
+
+        return ok;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>runSelection</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Processes the selected 'ready' inbound messages
+    /// </summary>
+    /// <returns>True if all went ok</returns>
+    public boolean runSelection()
+    {
+        boolean         ok = true;
+        List            recordList = con2List(this.parmProcessingContract().parmRecordContainer());
+        ListEnumerator  recordListEnumerator;
+        ;
+
+        if (recordList)
+        {
+            recordListEnumerator = recordList.getEnumerator();
+
+            while (recordListEnumerator.moveNext())
+            {
+                inboundMessageTable = OMGInboundMessageTable::findRecId(recordListEnumerator.current());
+
+                if (inboundMessageTable && inboundMessageTable.MessageStatus == OMGProcessingStatus::Ready)
+                {
+                    response = OMGInboundMessageTable::processMessage(inboundMessageTable);
+
+                    if (response.parmProcessedOk() == false)
+                    {
+                        ok = false;
+                    }
+                    processedCounter++;
+                }
+            }
+        }
+
+        return ok;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateInboundHandlerParameters</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiates the specific handler class and calls the validation method on them
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    public boolean validateInboundHandlerParameters()
+    {
+        boolean                     ret;
+        SysDictClass                sysDictClass;
+        OMGIInboundMessageHandler   iInboundMessageHandler;
+        ;
+
+        sysDictClass = new SysDictClass(className2Id(messageTypeTable.InboundMessageHandlerClass));
+        if (sysDictClass)
+        {
+            iInboundMessageHandler = sysDictClass.makeObject();
+
+            ret = iInboundMessageHandler.validateMessageTypeParameters(messageTypeTable);
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmProcessingContract</Name>
+				<Source><![CDATA[
+    public OMGProcessingContract parmProcessingContract(OMGProcessingContract    _processingContract = processingContract)
+    {
+        processingContract = _processingContract;
+        return processingContract;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

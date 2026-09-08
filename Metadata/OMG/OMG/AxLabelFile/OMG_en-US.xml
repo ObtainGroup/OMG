@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxLabelFile xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMG_en-US</Name>
+	<LabelContentFileName>OMG.en-US.label.txt</LabelContentFileName>
+	<LabelFileId>OMG</LabelFileId>
+	<RelativeUriInModelStore>OMG\OMG\AxLabelFile\LabelResources\en-US\OMG.en-US.label.txt</RelativeUriInModelStore>
+</AxLabelFile>

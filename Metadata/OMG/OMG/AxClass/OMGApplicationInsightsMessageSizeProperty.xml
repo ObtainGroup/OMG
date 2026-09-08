@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGApplicationInsightsMessageSizeProperty</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Application Insights property for message size.
+/// </summary>
+public class OMGApplicationInsightsMessageSizeProperty extends SysApplicationInsightsProperty
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>newFromMessageSize</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OMGApplicationInsightsMessageSizeProperty"/> class.
+    /// </summary>
+    /// <param name="_size">Message size</param>
+    /// <returns>OMGApplicationInsightsMessageSizeProperty</returns>
+    public static OMGApplicationInsightsMessageSizeProperty newFromMessageSize(int64 _size)
+    {
+        return new OMGApplicationInsightsMessageSizeProperty(int642Str(_size));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initialize</Name>
+				<Source><![CDATA[
+    protected container initialize()
+    {
+        return OMGApplicationInsightsProperties::MessageSize;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

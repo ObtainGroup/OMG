@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGApplicationInsightsMessageErrorCountProperty</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Application Insights property for the number of errors in a message.
+/// </summary>
+public class OMGApplicationInsightsMessageErrorCountProperty extends SysApplicationInsightsProperty
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>newFromErrorCount</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OMGApplicationInsightsMessageErrorCountProperty"/> class.
+    /// </summary>
+    /// <param name="_errorCount">The number of errors in a message.</param>
+    /// <returns>The new instance.</returns>
+    public static OMGApplicationInsightsMessageErrorCountProperty newFromErrorCount(int64 _errorCount)
+    {
+        return new OMGApplicationInsightsMessageErrorCountProperty(int642Str(_errorCount));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initialize</Name>
+				<Source><![CDATA[
+    protected container initialize()
+    {
+        return OMGApplicationInsightsProperties::ErrorCount;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

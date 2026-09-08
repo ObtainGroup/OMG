@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGApplicationInsights</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// ApplicationsInsights class to log events
+/// </summary>
+public class OMGApplicationInsights implements System.IDisposable
+{
+    protected SysApplicationInsightsEventTelemetry eventTelemetry;
+    protected System.Diagnostics.Stopwatch stopwatch;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>OnInstantiated</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Called when the object is instantiated
+    /// </summary>
+    /// <param name = "_applicationInsightsLogObject">OMGApplicationInsights</param>
+    delegate void OnInstantiated(OMGApplicationInsights _applicationInsightsLogObject) {}
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>OnDisposing</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Called when the object is disposed
+    /// </summary>
+    /// <param name = "_applicationInsightsLogObject">OMGApplicationInsights</param>
+    delegate void OnDisposing(OMGApplicationInsights _applicationInsightsLogObject) {}
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    protected void new(str _eventName)
+    {
+        this.eventTelemetry = SysApplicationInsightsEventTelemetry::newFromEventIdName('OMG', _eventName);
+
+        stopwatch = System.Diagnostics.Stopwatch::StartNew();
+
+        this.OnInstantiated(this);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>addMessageTypeIdProperty</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Add TypeId property to the event
+    /// </summary>
+    /// <param name = "_messageTypeId">MessageTypeId</param>
+    public void addMessageTypeIdProperty(OMGMessageTypeId _messageTypeId)
+    {
+        SysApplicationInsightsProperty property = OMGApplicationInsightsMessageTypeIdProperty::newFromValue(_messageTypeId);
+        eventTelemetry.addProperty(property);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>addDurationProperty</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Add Duration property to the event
+    /// </summary>
+    /// <param name = "_duration">Duration</param>
+    public void addDurationProperty(int64 _duration)
+    {
+        SysApplicationInsightsProperty property = OMGApplicationInsightsDurationProperty::newFromDuration(_duration);
+        eventTelemetry.addProperty(property);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>addMessageCountProperty</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Add RecordCount property to the event
+    /// </summary>
+    /// <param name = "_recordCount">RecordCount</param>
+    public void addMessageCountProperty(int64 _recordCount)
+    {
+        SysApplicationInsightsProperty property = OMGApplicationInsightsMessageCountProperty::newFromRecordCount(_recordCount);
+        eventTelemetry.addProperty(property);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>addMessageSizeProperty</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Add MessageSize property to the event
+    /// </summary>
+    /// <param name = "_messageSize">MessageSize</param>
+    public void addMessageSizeProperty(int64 _messageSize)
+    {
+        SysApplicationInsightsProperty property = OMGApplicationInsightsMessageSizeProperty::newFromMessageSize(_messageSize);
+        eventTelemetry.addProperty(property);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>stopTimer</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Stop the timer
+    /// </summary>
+    public void stopTimer()
+    {
+        stopwatch.Stop();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dispose</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Add the telemetry to ApplicationInsights and dispose the object
+    /// </summary>
+    public void dispose()
+    {
+        this.OnDisposing(this);
+
+        if (stopwatch.IsRunning)
+        {
+            stopwatch.Stop();
+        }
+
+        this.addDurationProperty(stopwatch.ElapsedMilliseconds);
+        SysApplicationInsightsTelemetryLogger::instance().trackEvent(eventTelemetry);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

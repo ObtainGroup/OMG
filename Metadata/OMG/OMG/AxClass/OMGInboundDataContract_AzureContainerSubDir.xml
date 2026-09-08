@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundDataContract_AzureContainerSubDir</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Data contract for importing files from Azure containers including sub-directories
+/// </summary>
+[DataContract]
+class OMGInboundDataContract_AzureContainerSubDir extends OMGInboundDataContract_AzureContainer
+{    
+    OMGAzureArchiveContainer    archiveContainerName;
+    OMGArchiveUnderSubDir       archiveUnderSubDir;
+
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmArchiveUnderSubDir</Name>
+				<Source><![CDATA[
+    [DataMember, SysOperationDisplayOrder('10'), OMGArchiveUnderSubDir]
+    public OMGArchiveUnderSubDir parmArchiveUnderSubDir(OMGArchiveUnderSubDir _archiveUnderSubDir = archiveUnderSubDir)
+    {
+        archiveUnderSubDir = _archiveUnderSubDir;
+        return archiveUnderSubDir;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmArchiveContainerName</Name>
+				<Source><![CDATA[
+    [DataMember, OMGAzureArchiveContainerName, SysOperationDisplayOrder('5')]
+    public OMGAzureArchiveContainer parmArchiveContainerName(OMGAzureArchiveContainer _archiveContainerName = archiveContainerName)
+    {
+        archiveContainerName = _archiveContainerName;
+        return archiveContainerName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validationClassId</Name>
+				<Source><![CDATA[
+    public ClassId validationClassId()
+    {
+        return classNum(OMGAzureValidator_InboundContainerSubDir);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialogCaption</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// The caption used on the dialog
+    /// </summary>
+    /// <returns>A descriptive text</returns>
+    public Description dialogCaption()
+    {
+        return "@OMG:ImportFromAzureContainerSubDir";
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

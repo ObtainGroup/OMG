@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundDataContract_Azure</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Base data contract for Azure parameters
+/// </summary>
+[DataContract]
+class OMGInboundDataContract_Azure extends OMGDataContract_Azure
+{        
+    OMGFileTypeFilter           fileTypeFilter;
+    OMGPostImportAction         OMGPostImportAction;
+    
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmFileTypeFilter</Name>
+				<Source><![CDATA[
+    [DataMember, SysOperationDisplayOrder('8')]
+    public OMGFileTypeFilter parmFileTypeFilter(OMGFileTypeFilter _fileTypeFilter = fileTypeFilter)
+    {
+        fileTypeFilter = _fileTypeFilter;
+        return fileTypeFilter;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPostImportAction</Name>
+				<Source><![CDATA[
+    [DataMember, OMGPostImportAction, SysOperationDisplayOrder('9')]
+    public OMGPostImportAction parmPostImportAction(OMGPostImportAction _OMGPostImportAction = OMGPostImportAction)
+    {
+        OMGPostImportAction = _OMGPostImportAction;
+        return OMGPostImportAction;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundTransport_AzureContainer</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Handler class for transporting outbound messages to Azure containers
+/// </summary>
+class OMGOutboundTransport_AzureContainer extends OMGOutboundTransport
+{    
+    OMGMessageTypeTable                         messageTypeTable;
+    OMGOutboundDataContract_AzureContainer      dataContract;
+    OMGAzureContainerWriter                     azureContainerWriter;   
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>dataContractClass</Name>
+				<Source><![CDATA[
+    public ClassId dataContractClass()
+    {
+        return classNum(OMGOutboundDataContract_AzureContainer);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>description</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// The class description
+    /// </summary>
+    /// <returns>The class description</returns>
+    public static Description description()
+    {
+        return "@OMG:UploadToAzureContainer";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initMessageType</Name>
+				<Source><![CDATA[
+    public void initMessageType(OMGMessageTypeTable _messageTypeTable)
+    {
+        messageTypeTable    = _messageTypeTable;
+        // Initializing the datacontract with values from the message type serialized field
+        dataContract   = FormJsonSerializer::deserializeObject(classNum(OMGOutboundDataContract_AzureContainer), messageTypeTable.OutboundSerializedParameterContract);
+        if (dataContract.parmTargetContainer() && dataContract.parmKeyVaultCertificateRef())
+        {
+            azureContainerWriter = OMGAzureContainerWriter::createFromKeyVaultCertificate(dataContract.parmKeyVaultCertificateRef());
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processMessage</Name>
+				<Source><![CDATA[
+    public boolean processMessage(OMGOutboundMessageTable  _outboundMessageTable)
+    {        
+        Filename                    filename;
+        OMGAzureTargetContainer     targetContainer;
+        System.Byte[]               byteArray;
+        boolean                     ret;
+        ;
+
+        // Initializing the datacontract with values from the message type serialized field
+                               
+        filename            = this.generateFilename(_outboundMessageTable, dataContract);
+
+        if (azureContainerWriter)
+        {                 
+            // Create bytearray from base64 string if the messageis not already base64 encoded
+            if (_outboundMessageTable.Base64Encoded == NoYes::No)
+            {
+                var plainTextBytes = System.Text.Encoding::GetEncoding(str2Int(dataContract.parmCodePage())).GetBytes(_outboundMessageTable.Message);
+                str baseStr = System.Convert::ToBase64String(plainTextBytes);
+
+                byteArray = System.Convert::FromBase64String(baseStr);
+
+            }
+            else
+            {
+                byteArray = System.Convert::FromBase64String(_outboundMessageTable.Message);
+            }
+            
+            targetContainer = dataContract.parmTargetContainer() + '/' + _outboundMessageTable.TargetDirectory;
+
+            // We need to ensure that the targetContainer ends with a '/'
+            targetContainer = OMGFeatures::ensureLastChar(targetContainer, '/');
+
+            using(System.IO.MemoryStream memoryStream = new System.IO.MemoryStream(byteArray))
+            {                
+                azureContainerWriter.writeStorageContainer(memoryStream, filename, targetContainer);
+                ret = true;
+            }                
+        }
+        else
+        {
+            ret = false;
+        }
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

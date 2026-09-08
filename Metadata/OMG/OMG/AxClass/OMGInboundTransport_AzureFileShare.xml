@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundTransport_AzureFileShare</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Azure.Storage;
+using Azure.Storage.Files.Shares;
+using Azure.Storage.Files.Shares.Models;
+using System.Collections;
+using System.Threading;
+
+/// <summary>
+/// Handler class for importing files from an Azure file share
+/// </summary>
+class OMGInboundTransport_AzureFileShare extends OMGInboundTransport
+{
+    OMGAzureFileShareReader     azureFileShareReader;
+    object                      dataContract;
+    int                         messageCounter;    
+    int64                       messageSize;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>messageCount</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Return numbner of messages feched
+    /// </summary>
+    /// <returns>Duh</returns>
+    protected int64 messageCount()
+    {
+        return messageCounter;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>messageSize</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Returns the total size of the messages fetched
+    /// </summary>
+    /// <returns>Size in bytes</returns>
+    protected int64 messageSize()
+    {
+        return messageSize;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dataContractClass</Name>
+				<Source><![CDATA[
+    public ClassId dataContractClass()
+    {
+        return classNum(OMGInboundDataContract_AzureFileShare);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>doTransport</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Imports the files
+    /// </summary>
+    /// <param name = "_dataContract">Data contract holding the messageTypeId</param>    
+    public void doTransport(OMGInboundTransportContract _dataContract)
+    {
+        OMGMessageTypeTable                     messageTypeTable = OMGMessageTypeTable::find(_dataContract.parmMessageTypeId());
+        Map                                     fileMap;
+        ;
+
+        dataContract = FormJsonSerializer::deserializeObject(this.dataContractClass(), messageTypeTable.InboundSerializedParameterContract) as OMGInboundDataContract_AzureFileShare;
+
+        if (dataContract && dataContract.parmFileShareName() && dataContract.parmSourceDirectory() && dataContract.parmKeyVaultCertificateRef())
+        {
+            azureFileShareReader = this.constructReader(_dataContract);
+
+            fileMap = azureFileShareReader.buildFileHandleMap();
+            
+            this.processFileMap(fileMap, dataContract.parmCodePage(), messageTypeTable.MessageTypeId);
+        }
+        else
+        {
+            throw error(strFmt("@OMG:FaultyMessageTypeParameters", messageTypeTable.MessageTypeId));
+        }
+       
+        info(strFmt("@OMG:MessagesFetched", messageTypeTable.MessageTypeId, messageCounter));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>constructReader</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Constructs an instance of the OMGAzureFileShareReader class
+    /// </summary>
+    /// <param name = "_dataContract">Data contract from the messageType</param>
+    /// <returns>The constructed reader</returns>
+    public OMGAzureFileShareReader constructReader(OMGInboundTransportContract _dataContract)
+    {
+        return OMGAzureFileShareReader::newParameters(dataContract.parmKeyVaultCertificateRef(),
+                                                      dataContract.parmFileShareName(),
+                                                      dataContract.parmSourceDirectory(),
+                                                      dataContract.parmArchiveDirectory(),
+                                                      dataContract.parmFileTypeFilter(),
+                                                      dataContract.parmPostImportAction(),
+                                                      NoYes::No,
+                                                      NoYes::No,
+                                                      '');
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processFileMap</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Imports the files in the map
+    /// </summary>
+    /// <param name = "_fileMap">The map og files</param>
+    /// <param name = "_codePage">The codepage in the files</param>
+    /// <param name = "_messageTypeId">The message type</param>
+    public void processFileMap(Map              _fileMap,
+                               DMFCodePage      _codePage,
+                               OMGMessageTypeId _messageTypeId)
+    {
+        MapEnumerator   mapEnumerator = _fileMap.getEnumerator();
+        ShareFileClient shareFileClient;
+        System.String   fileContent;
+                        
+        while (mapEnumerator.moveNext())
+        {
+            shareFileClient = mapEnumerator.currentValue();
+                                                
+            if (shareFileClient)
+            {
+                fileContent = this.readSingleFile(shareFileClient, _codePage);
+
+                this.generateInboundMessage(fileContent, shareFileClient, _messageTypeId);
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>readSingleFile</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Reads a single file from a CloudFile object and returns the content as a string
+    /// </summary>
+    /// <param name = "_shareFileClient">The file client</param>
+    /// <param name = "_codePage">Codepage</param>
+    /// <returns>The string</returns>
+    public System.String readSingleFile(ShareFileClient _shareFileClient,
+                                        DMFCodePage     _codePage = '850')
+    {
+        System.IO.MemoryStream  memoryStream;
+        System.IO.StreamReader  streamReader;
+        System.String           fileContent;
+        
+        if (dataContract.parmBase64Encode())
+        {
+            ShareFileDownloadInfo   download    = _shareFileClient.Download(null, CancellationToken::None);
+            System.IO.Stream        stream      = download.content;
+            memoryStream                        = new System.IO.MemoryStream();
+            stream.CopyTo(memoryStream);
+           
+            streamReader    = new System.IO.StreamReader(memoryStream, true);
+            System.IO.Stream baseStream = streamReader.BaseStream;
+            baseStream.CopyTo(memoryStream);
+            System.Byte[] bytes = memoryStream.ToArray();
+                                    
+            fileContent = System.Convert::ToBase64String(bytes);
+        }
+        else
+        {            
+            ShareFileDownloadInfo   download    = _shareFileClient.Download(null, CancellationToken::None);
+            System.IO.Stream        stream      = download.content;
+            memoryStream                        = new System.IO.MemoryStream();
+            stream.CopyTo(memoryStream);
+
+            if (memoryStream.CanSeek)
+            {
+                memoryStream.Seek(0, System.IO.SeekOrigin::Begin);
+            }
+            streamReader    = new System.IO.StreamReader(memoryStream,
+                                                         System.Text.Encoding::GetEncoding(str2Int(_codePage)));
+            fileContent            = streamReader.ReadToEnd();
+            streamReader.Close();
+            streamReader.Dispose();
+        }
+        memoryStream.Dispose();
+        return fileContent;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>generateInboundMessage</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Generates records in the inbound message table based on the file map
+    /// </summary>
+    /// <param name = "_message">The file content</param>
+    /// <param name = "_shareFileClient">The share file client object</param>
+    /// <param name = "_messageTypeId">The message type</param>
+    public void generateInboundMessage(System.String    _message,
+                                       ShareFileClient  _shareFileClient,
+                                       OMGMessageTypeId _messageTypeId)
+    {
+        ShareFileProperties     properties = _shareFileClient.GetProperties(null, CancellationToken::None);
+        System.DateTimeOffset   sourceDateTimeValue = properties.LastModified;
+        OMGInboundMessageTable  inboundMessageTable;
+
+        try
+        {
+            ttsbegin;
+            
+            inboundMessageTable = OMGInboundMessageTable::createInboundMessage(_shareFileClient.Path,
+                                                                               _messageTypeId,
+                                                                               _message,
+                                                                               dataContract.parmBase64Encode(),
+                                                                               OMGMessageTypeTable::find(_messageTypeId).Company,
+                                                                               newGuid(),
+                                                                               sourceDateTimeValue.get_DateTime());
+            
+                        
+            azureFileShareReader.postImportAction(dataContract, _shareFileClient);
+            
+            ttscommit;
+
+            this.onInboundMessageInserted(inboundMessageTable);
+
+            messageCounter++;
+            messageSize += strLen(_message);
+        }
+
+        catch (Exception::Error)
+        {
+            throw Error("@ElectronicReporting:ImportCancelled");
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>description</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Description of class
+    /// </summary>
+    /// <returns>The description</returns>
+    public static Description description()
+    {
+        return "@OMG:ImportFilesFromAzureFileShare";
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGAzureValidator_InboundContainerSubDir</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Validation class for inbound container incl sub directories
+/// </summary>
+class OMGAzureValidator_InboundContainerSubDir extends OMGAzureValidator_InboundContainer
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>validateArchiving</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates the archiving parameters
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    public boolean validateArchiving()
+    {                
+        OMGInboundDataContract_AzureContainerSubDir     inboundDataContract = this.parmDataContract();
+        boolean                                         ret = true;
+        ;
+                        
+        if (inboundDataContract.parmArchiveUnderSubDir() == NoYes::No)
+        {
+            ret = super();
+        }
+        else if (!inboundDataContract.parmArchiveContainerName())
+        {
+            ret = checkFailed("@OMG:ArchiveNameMissing");
+        }        
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

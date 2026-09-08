@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<IgnoreDiagnostics>
+  <Name>OMG_BPSuppressions</Name>
+  <Items>
+      	<Diagnostic>
+        	<DiagnosticType>BestPractices</DiagnosticType>
+	        <Severity>Warning</Severity>
+        	<Path>dynamics://DataEntityView/OMGInboundMessageTableEntity/DataEntityViewMappedField/Base64Encoded</Path>
+	        <ElementType>AxDataEntityView</ElementType>
+        	<Moniker>DataEntityFieldNamePropertyCheck</Moniker>
+	        <Message>DataEntityFieldNameCheck: The data entity 'OMGInboundMessageTableEntity' has an array field 'Base64Encoded' which contains invaid characters in it's name. Please remove '_' or any other numeric value from the field.</Message>  
+        	<Justification>By design</Justification>
+      	</Diagnostic>
+	<Diagnostic>        
+	        <DiagnosticType>BestPractices</DiagnosticType>
+        	<Severity>Warning</Severity>
+	        <Path>dynamics://Class/OMGAzureContainerFieldAttribute/Method/new</Path>
+        	<ElementType>AxClass</ElementType>
+	        <Moniker>BPErrorClassNewNotProtected</Moniker>
+		<Message>BPErrorClassNewNotProtected: The constructor (i.e. the 'new' method) should be protected. In addition, private constructors are allowed on final classes.</Message>
+	        <Justification>The class is an attribute and in order for it to work correct, new cannot be protected</Justification>
+ 	</Diagnostic>
+	<Diagnostic>
+      		<DiagnosticType>BestPractices</DiagnosticType>
+	 	<Severity>Warning</Severity>
+	 	<Path>dynamics://Class/OMGAzureFileShareDirectoryAttribute/Method/new</Path>
+	 	<ElementType>AxClass</ElementType>
+		<Moniker>BPErrorClassNewNotProtected</Moniker>
+ 		<Message>BPErrorClassNewNotProtected: The constructor (i.e. the 'new' method) should be protected. In addition, private constructors are allowed on final classes.</Message>
+	        <Justification>The class is an attribute and in order for it to work correct, new cannot be protected</Justification>
+	</Diagnostic>
+	<Diagnostic>
+      		<DiagnosticType>BestPractices</DiagnosticType>
+		<Severity>Warning</Severity>
+      		<Path>dynamics://Class/OMGAzureFileShareNameAttribute/Method/new</Path>
+      		<ElementType>AxClass</ElementType>
+      		<Moniker>BPErrorClassNewNotProtected</Moniker>
+	    	<Message>BPErrorClassNewNotProtected: The constructor (i.e. the 'new' method) should be protected. In addition, private constructors are allowed on final classes.</Message>
+	        <Justification>The class is an attribute and in order for it to work correct, new cannot be protected</Justification>
+	</Diagnostic>
+	<Diagnostic>
+        	<DiagnosticType>BestPractices</DiagnosticType>
+	        <Severity>Warning</Severity>
+        	<Path>dynamics://DataEntityView/OMGOutboundMesssageTableEntity/DataEntityViewMappedField/Base64Encoded</Path>
+	        <ElementType>AxDataEntityView</ElementType>
+        	<Moniker>DataEntityFieldNamePropertyCheck</Moniker>
+	        <Message>DataEntityFieldNameCheck: The data entity 'OMGOutboundMesssageTableEntity' has an array field 'Base64Encoded' which contains invaid characters in it's name. Please remove '_' or any other numeric value from the field.</Message>  
+        	<Justification>By design</Justification>
+      	</Diagnostic>
+  </Items>
+</IgnoreDiagnostics>

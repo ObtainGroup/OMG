@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundMessageFetchController</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Controller class for fetching inbound messages
+/// </summary>
+[SysOperationJournaledParametersAttribute(true)]
+class OMGInboundMessageFetchController extends SysOperationServiceController
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>construct</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Constructs the class
+    /// </summary>
+    /// <returns>The instantiated OMGInboundMessageFetchController class</returns>
+    public static OMGInboundMessageFetchController construct()
+    {
+        SysOperationController controller;
+
+        controller = new OMGInboundMessageFetchController();
+
+        return controller;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiates the class
+    /// </summary>
+    protected void new()
+    {
+        super(classStr(OMGInboundMessageFetchService), methodStr(OMGInboundMessageFetchService, processOperation), SysOperationExecutionMode::Synchronous);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Public handle for the class. Instantiates it, and kicks off processing
+    /// </summary>
+    /// <param name = "_args">Args from the caller</param>
+    public static void main(Args _args)
+    {
+        OMGInboundMessageFetchController controller = OMGInboundMessageFetchController::construct();
+        controller.startOperation();
+
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>defaultCaption</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// The class caption
+    /// </summary>
+    /// <returns>The caption</returns>
+    protected ClassDescription defaultCaption()
+    {
+        return "@OMG:FetchInboundMessages";
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

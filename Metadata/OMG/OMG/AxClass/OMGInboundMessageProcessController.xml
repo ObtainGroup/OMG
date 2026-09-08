@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundMessageProcessController</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Controller class for processing inbound messages
+/// </summary>
+[SysOperationJournaledParametersAttribute(true)]
+class OMGInboundMessageProcessController  extends SysOperationServiceController
+{
+    boolean     showQueryValues;    
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>construct</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Constructs the class
+    /// </summary>
+    /// <returns>The instantiated OMGInboundMessageProcessController class</returns>
+    public static OMGInboundMessageProcessController construct()
+    {
+        SysOperationController controller;
+
+        controller = new OMGInboundMessageProcessController();
+
+        return controller;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiates the class
+    /// </summary>
+    protected void new()
+    {
+        super(classStr(OMGInboundMessageProcessService), methodStr(OMGInboundMessageProcessService, processOperation), SysOperationExecutionMode::Synchronous);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>main</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Public handle for the class. Instantiates it, and kicks off processing
+    /// </summary>
+    /// <param name = "_args">Args from the caller</param>
+    public static void main(Args _args)
+    {
+        OMGInboundMessageProcessController  controller = OMGInboundMessageProcessController::construct();
+        OMGInboundMessageProcessContract    dataContract;
+        List                                callerRecordList;
+        MultiSelectionHelper                multiselectionHelper;
+        OMGInboundMessageTable              inboundMessageTable;
+        ;
+
+        controller.parmArgs(_args);
+        controller.parmShowQueryValues(true);        
+
+        if (_args && _args.caller() is FormRun && _args.dataset() == tableNum(OMGInboundMessageTable))
+        {
+            callerRecordList        = new List(Types::Int64);
+            multiselectionHelper    = MultiSelectionHelper::createFromCaller(_args.caller());
+        
+            inboundMessageTable = multiselectionHelper.getFirst();
+            while (inboundMessageTable)
+            {
+                callerRecordList.addEnd(inboundMessageTable.RecId);
+            
+                inboundMessageTable = multiselectionHelper.getNext();
+            }
+
+            // If called from the form, we dont want it to be able to execute in batch
+            controller.showBatchTab(false);                                   
+            BatchInfo   batchInfo = new BatchInfo(controller);
+            batchInfo.parmBatchExecute(NoYes::No);            
+            controller.batchInfo = batchInfo;
+            controller.dataContractsInitialized = true;
+        }
+        
+        // Clear recordCon from data contract
+        dataContract = controller.getDataContractObject();
+        dataContract.parmRecordCon(conNull());
+
+        // Put records from calling datasource into dataContract
+        if (callerRecordList)
+        {                                    
+            controller.parmShowQueryValues(false);
+                                                
+            if (dataContract is OMGInboundMessageProcessContract)
+            {
+                dataContract.parmRecordCon(list2Con(callerRecordList));
+            }            
+        }
+        
+        controller.startOperation();
+
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>defaultCaption</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// The class caption
+    /// </summary>
+    /// <returns>The caption</returns>
+    protected ClassDescription defaultCaption()
+    {
+        return "@OMG:ProcessInbound";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmShowQueryValues</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Parm method to set the variable showQueryValues
+    /// </summary>
+    /// <param name = "_showQueryValues">The value to set</param>
+    /// <returns>The set value</returns>
+    public boolean parmShowQueryValues(boolean  _showQueryValues = showQueryValues)
+    {
+        showQueryValues = _showQueryValues;
+
+        return showQueryValues;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>showQueryValues</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Determines if the query should be shown in the prompt
+    /// </summary>
+    /// <param name = "parameterName">The parameter name (whatever that is...)</param>
+    /// <returns>True if the query should be shown</returns>
+    public boolean showQueryValues(str parameterName)
+    {
+        return this.parmShowQueryValues();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGDataContract_Azure</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Base data contract class for Azure transports
+/// </summary>
+[DataContract]
+class OMGDataContract_Azure extends OMGDataContract
+{
+    KeyVaultCertificateRef      keyVaultCertificateRef;
+    OMGContractDataAreaId       contractDataAreaId;   // DataAreaId where the parameters belongs
+    OMGCodePage                 codePage    = '1252';
+    OMGBase64Encode             base64Encode;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmKeyVaultCertificateRef</Name>
+				<Source><![CDATA[
+    [DataMember, OMGKeyVaultCertficateReffAttribue, SysOperationDisplayOrderAttribute('1')]
+    public KeyVaultCertificateRef parmKeyVaultCertificateRef(KeyVaultCertificateRef _keyVaultCertificateRef = keyVaultCertificateRef)
+    {
+        keyVaultCertificateRef = _keyVaultCertificateRef;
+        return keyVaultCertificateRef;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmContractDataAreaId</Name>
+				<Source><![CDATA[
+    [DataMember, OMGContractDataAreaIdAttribue, SysOperationDisplayOrderAttribute('2')]
+    public OMGContractDataAreaId parmContractDataAreaId(OMGContractDataAreaId _contractDataAreaId = contractDataAreaId)
+    {
+        contractDataAreaId = _contractDataAreaId;
+        return contractDataAreaId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCodePage</Name>
+				<Source><![CDATA[
+    [DataMember, SysOperationDisplayOrderAttribute('6')]
+    public OMGCodePage parmCodePage(OMGCodePage _codePage = codePage)
+    {
+        codePage = _codePage;
+        return codePage;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmBase64Encode</Name>
+				<Source><![CDATA[
+    [DataMember, SysOperationDisplayOrderAttribute('7')]
+    public OMGBase64Encode parmBase64Encode(OMGBase64Encode _base64Encode = base64Encode)
+    {
+        base64Encode = _base64Encode;
+        return base64Encode;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validationClassId</Name>
+				<Source><![CDATA[
+    public ClassId validationClassId()
+    {
+        return classNum(OMGAzureValidator);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validate</Name>
+				<Source><![CDATA[
+    public boolean validate()
+    {        
+        return OMGAzureValidator::newValidation(this).validate();
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

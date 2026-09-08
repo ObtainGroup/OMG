@@ -1,0 +1,714 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGContractUIBuilderBase</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Base class for building a dialog from a data contract
+/// </summary>
+class OMGContractUIBuilderBase
+{
+    ClassId                         dataContractClassId;
+    OMGSerializedParameterContract  serializedInputContract;
+    SysDictClass                    sysDictDataContractClass;
+    DialogField                     contractDataAreaIdControl;
+    Map                             dialogFieldMap;
+    Object                          dataContractObject;
+    OMGSerializedParameterContract  serializedOutputContract;
+    Object                          dataContractClass; 
+    FormBuildCommandButtonControl   okButtonControl;
+    Dialog                          dialog;
+
+    // Azure
+    KeyVaultCertificateRef          keyVaultCertificateRef;
+    DialogField                     keyVaultRefControl;
+    DialogField                     fileShareNameControl;
+    DialogField                     postImportActionControl;
+    DialogField                     archiveDirectoryControl;
+    DialogField                     archiveUnderSubDirControl;      // SubDir
+    DialogField                     archiveContainerNameControl;    // SubDir
+    str                             azureFileShareName;
+    Map                             controlKeyVaultMethodMap = new Map(Types::String, Types::string);
+    Map                             keyVaultMethodDialogFieldMap = new Map(Types::String, Types::Class);
+
+    // DMF inbound handler
+    DialogField                     definitionGroupNameControl;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>run</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Kicks off the dialog, gets the values and serilizes them into a data contract
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    public boolean run()
+    {
+        boolean         ret;
+        ;
+
+        this.buildDialog();
+
+        if (dialog.run())
+        {
+            this.getFromDialog();
+            this.serializeContract();
+
+            ret = true;
+        }
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDataContractClassId</Name>
+				<Source><![CDATA[
+    public ClassId parmDataContractClassId(ClassId _dataContractClassId = dataContractClassId)
+    {
+        dataContractClassId = _dataContractClassId;
+
+        return dataContractClassId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmSerializedInputContract</Name>
+				<Source><![CDATA[
+    public OMGSerializedParameterContract parmSerializedInputContract(OMGSerializedParameterContract _serializedInputContract = serializedInputContract)
+    {
+        serializedInputContract = _serializedInputContract;
+
+        return serializedInputContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getSerializedOutputContract</Name>
+				<Source><![CDATA[
+    public OMGSerializedParameterContract getSerializedOutputContract()
+    {
+        return serializedOutputContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processDialogFieldDictMethod</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Entry point for processing dialog fileds including their SysDictMethod
+    /// </summary>
+    /// <param name = "_dialogField">The Dialog field</param>
+    /// <param name = "_sysDictMethod">The SysDictMethod</param>
+    public void processDialogFieldDictMethod(DialogField _dialogField, SysDictMethod _sysDictMethod)
+    {
+        // DMF inbound handler
+        if (_sysDictMethod.getAttribute(classStr(OMGDMFDefinitionGroupAttribute)))
+        {
+            definitionGroupNameControl = _dialogField;
+        }
+
+        if (_sysDictMethod.getAttribute(classStr(OMGDMFDefinitionGroupEntityAttribute)))
+        {
+            _dialogField.registerOverrideMethod(methodStr(FormStringControl, lookup), methodStr(OMGContractUIBuilderBase, lookupDefinitionGroupEntity), this);
+        }
+        // DMF inbound handler
+
+        // Azure
+        // Lookup on Azure containers
+        if (_sysDictMethod.getAttribute(classStr(OMGAzureContainerFieldAttribute)))
+        {
+            OMGAzureContainerFieldAttribute attrib = _sysDictMethod.getAttribute(classStr(OMGAzureContainerFieldAttribute));
+            controlKeyVaultMethodMap.add(_dialogField.name(), attrib.azureKeyVaultRefMethod);
+
+            _dialogField.registerOverrideMethod(methodStr(FormStringControl, lookup), methodStr(OMGContractUIBuilderBase, lookupAzureContainer), this);
+            _dialogField.registerOverrideMethod(methodStr(FormStringControl, modified), methodStr(OMGContractUIBuilderBase, forceLowerCase), this);
+        }
+
+        // Lookup on Azure fileshares
+        if (_sysDictMethod.getAttribute(classStr(OMGAzureFileShareNameAttribute)))
+        {
+            OMGAzureFileShareNameAttribute attrib = _sysDictMethod.getAttribute(classStr(OMGAzureFileShareNameAttribute));
+            controlKeyVaultMethodMap.add(_dialogField.name(), attrib.azureKeyVaultRefMethod);
+
+            _dialogField.registerOverrideMethod(methodStr(FormStringControl, lookup), methodStr(OMGContractUIBuilderBase, lookupAzureFileShareName), this);
+            _dialogField.registerOverrideMethod(methodStr(FormStringControl, modified), methodStr(OMGContractUIBuilderBase, forceLowerCase), this);
+
+            fileShareNameControl = _dialogField;
+        }
+
+        // Lookup Azure directories within file
+        if (_sysDictMethod.getAttribute(classStr(OMGAzureFileShareDirectoryAttribute)))
+        {
+            OMGAzureFileShareDirectoryAttribute attrib = _sysDictMethod.getAttribute(classStr(OMGAzureFileShareDirectoryAttribute));
+            controlKeyVaultMethodMap.add(_dialogField.name(), attrib.azureKeyVaultRefMethod);
+
+            _dialogField.registerOverrideMethod(methodStr(FormStringControl, lookup), methodStr(OMGContractUIBuilderBase, lookupAzureFileShareDirectory), this);
+        }
+
+        if (_sysDictMethod.getAttribute(classStr(OMGKeyVaultCertficateReffAttribue)))
+        {
+            keyVaultRefControl = _dialogField;
+
+            keyVaultRefControl.registerOverrideMethod(methodStr(FormStringControl, modified), methodStr(OMGContractUIBuilderBase, keyVaultRefModified), this);
+        }
+                
+        if (_sysDictMethod.getAttribute(classStr(OMGContractDataAreaIdAttribue)))
+        {
+            contractDataAreaIdControl = _dialogField;
+            contractDataAreaIdControl.enabled(false);
+        }
+                
+        // Get postImportActionAttribute
+        if (_sysDictMethod.getAttribute(classStr(OMGPostImportActionAttribute)))
+        {
+            postImportActionControl = _dialogField;
+            postImportActionControl.registerOverrideMethod(methodStr(FormComboBoxControl, modified), methodStr(OMGContractUIBuilderBase, postImportActionModified), this);
+        }
+                
+        // Get archive directory attribute
+        if (_sysDictMethod.getAttribute(classStr(OMGArchiveDirectoryAttribute)))
+        {
+            archiveDirectoryControl = _dialogField;
+        }
+                
+        // Get archive under subdirectory attribute
+        if (_sysDictMethod.getAttribute(classStr(OMGArchiveUnderSubDirAttribute)))
+        {
+            archiveUnderSubDirControl = _dialogField;
+            archiveUnderSubDirControl.registerOverrideMethod(methodstr(FormCheckBoxControl, modified), methodStr(OMGContractUIBuilderBase, archiveUnderSubDirControlModified), this);
+        }
+
+        // Get archiveContainerName (used for sub dir) attribute
+        if (_sysDictMethod.getAttribute(classStr(OMGAzureArchiveContainerNameAttribute)))
+        {
+            archiveContainerNameControl = _dialogField;
+        }
+        // Azure
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>buildDialog</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Builds the dialog
+    /// </summary>    
+    public void buildDialog()
+    {        
+        SysDictMethod               sysDictMethod;
+        SysOperationLabelAttribute  labelAttribute;
+        LabelType                   labelText;
+        Set                         methodSet;
+        MapEnumerator               sortedMapEnumerator;        
+        ;
+
+        dialog = new Dialog();
+
+        okButtonControl             = dialog.formBuildDesign().control('OkButton');
+
+        dialogFieldMap              = new Map(Types::String, Types::Class);
+        sysDictDataContractClass    = new SysDictClass(dataContractClassId);
+        
+        dataContractClass   = this.deSerializeJSON(dataContractClassId, serializedInputContract);
+                
+        if (!dataContractClass)
+        {
+            dataContractClass = sysDictDataContractClass.makeObject();
+        }
+        
+        methodSet           = sysDictDataContractClass.methods(true, false, true);
+
+        // Setting the dialog caption
+        if (sysDictDataContractClass.hasObjectMethod('dialogCaption'))
+        {
+            dialog.caption(sysDictDataContractClass.callObject('dialogCaption', sysDictDataContractClass.makeObject()));
+        }
+
+        // Create sorted Map of DisplayOrder/parmMethod
+        sortedMapEnumerator = this.createSortedMethodMap(methodSet).getEnumerator();
+                
+        while (sortedMapEnumerator.moveNext())
+        {
+            sysDictMethod = sortedMapEnumerator.currentValue();
+                   
+            if (sysDictMethod && sysDictMethod.isPatternMethodParm())
+            {
+                DialogField     dialogField;
+                labelAttribute  = sysDictMethod.getAttribute(classStr(SysOperationLabelAttribute));
+                labelText       = labelAttribute ? labelAttribute.label() : '';
+                
+                dialogField = dialog.addFieldValue(sysDictMethod.returnTypeName(), sysDictDataContractClass.callObject(sysDictMethod.name(),dataContractClass), labelText);
+                                
+                this.processDialogFieldDictMethod(dialogField, sysDictMethod);
+
+                dialogFieldMap.add(dialogField.name(), sysDictMethod);
+            }
+        }
+        
+        this.updateDialog(dialog);    // Updates the design on the dialog
+        
+        okButtonControl.registerOverrideMethod(methodStr(FormCommandButtonControl, clicked), methodStr(OMGContractUIBuilderBase, validateDataContract), this);        
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateDataContract</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates the values in the data contract
+    /// </summary>
+    /// <param name = "_formCommandButtonControl">The ok button</param>
+    public void validateDataContract(FormCommandButtonControl _formCommandButtonControl)
+    {        
+        ;
+
+        if (sysDictDataContractClass.hasObjectMethod('validate'))
+        {            
+            this.getFromDialog();   // updates the dataContractClass with the values
+         
+            if (sysDictDataContractClass.callObject('validate', dataContractObject))
+            {
+                _formCommandButtonControl.clicked();
+            }
+        }
+        else
+        {    
+            _formCommandButtonControl.clicked();
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>updateDialog</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Updates the dialog design
+    /// </summary>
+    /// <param name = "_dialog">The dialog in question</param>
+    public void updateDialog(Dialog     _dialog)
+    {
+        MapEnumerator   mapEnumerator = dialogFieldMap.getEnumerator();
+        DialogField     dlgField;
+        DialogGroup     dialogGroup;
+        
+        
+        if (postImportActionControl)
+        {
+            if (postImportActionControl.value() != OMGPostImportAction::Archive) // All archive related fields are hidden
+            {
+                if (archiveDirectoryControl)
+                {
+                    archiveDirectoryControl.visible(false);
+                    archiveDirectoryControl.value('');
+                }
+
+                if (archiveUnderSubDirControl)
+                {
+                    archiveUnderSubDirControl.visible(false);
+                    archiveUnderSubDirControl.value(NoYes::No);
+                }
+
+                if (archiveContainerNameControl)
+                {
+                    archiveContainerNameControl.visible(false);
+                    archiveContainerNameControl.value('');
+                }
+            }
+            else
+            {
+                if (archiveUnderSubDirControl)
+                {
+                    if (archiveUnderSubDirControl.value() == NoYes::Yes)
+                    {
+                        if (archiveDirectoryControl)
+                        {
+                            archiveDirectoryControl.visible(false);
+                            archiveDirectoryControl.value('');
+                        }
+                    }
+                    else
+                    {
+                        if (archiveContainerNameControl)
+                        {
+                            archiveContainerNameControl.visible(false);
+                            archiveContainerNameControl.value('');
+                        }
+                    }
+                }
+            }
+        }
+        // Disabling all controlls if the keyVaultRef belongs to another company
+        while (mapEnumerator.moveNext())
+        {
+            dlgField = _dialog.getDialogClass(mapEnumerator.currentKey());
+
+            if (contractDataAreaIdControl && contractDataAreaIdControl.value() && contractDataAreaIdControl.value() != curExt())
+            {
+                dlgField.enabled(false);
+                okButtonControl.enabled(false);
+                
+                // Hiding the keyVaultRefControl if it belongs to another company than curext()
+                keyVaultRefControl.visible(false);
+
+                // Adding info on why the dialog is disabled
+                if (!dialogGroup)
+                {
+                    dialogGroup = _dialog.addGroup("@OMG:ImportantInfo");
+                    _dialog.addText(strFmt("@OMG:SetupBelongsToCompany", contractDataAreaIdControl.value()));
+                }
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getFromDialog</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Retrives the values from the dialog fields
+    /// </summary>    
+    public void getFromDialog()
+    {
+        MapEnumerator   enumerator;
+        dialogField     dialogField;
+        ;
+
+        // Getting values from dialog and put them into data contract
+        enumerator = dialogFieldMap.getEnumerator();
+
+        dataContractObject      = sysDictDataContractClass.makeObject();
+
+        while (enumerator.moveNext())
+        {
+            dialogField = dialog.getDialogClass(enumerator.currentKey());
+
+            if (dialogField)
+            {
+                DictMethod  dictMethod = enumerator.currentValue();   
+                                                                     
+                sysDictDataContractClass.callObject(dictMethod.name(), dataContractObject, dialogField.value());
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>serializeContract</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Serializes the data contract object
+    /// </summary>
+    public void serializeContract()
+    {
+        serializedOutputContract = FormJsonSerializer::serializeClass(dataContractObject);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>deSerializeJSON</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// De-serializes the data contract
+    /// </summary>
+    /// <param name = "_classId">The class describing the content (a data contract)</param>
+    /// <param name = "_serializedContract">A string representing the serialized contract</param>
+    /// <returns>The desreialized object</returns>
+    public Object deSerializeJSON(ClassId  _classId,
+                                  str      _serializedContract)
+    {
+        return FormJsonSerializer::deserializeObject(_classId, _serializedContract);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>construct</Name>
+				<Source><![CDATA[
+    public static OMGContractUIBuilderBase construct()
+    {
+        return new OMGContractUIBuilderBase();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createSortedMethodMap</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Creates a map of the methods in the _methodSet sorted by the sort order attribute
+    /// </summary>
+    /// <param name = "_methodSet">A set of parm methods in the form of DictMethod</param>
+    /// <returns>The sorted map</returns>
+    public Map createSortedMethodMap(Set    _methodSet)
+    {
+        Map                                     sortedMap       = new Map(Types::String, Types::Class);
+        SetEnumerator                           setEnumerator   = _methodSet.getEnumerator();
+        SysOperationDisplayOrderAttribute       sysOperationDisplayOrderAttribute;
+        SysOperationControlVisibilityAttribute  visibilityAttribute;        
+        SysDictMethod                           sysDictMethod;
+        str                                     displayOrderKey;
+        Counter                                 methodCounter;
+        ;
+
+        while (setEnumerator.moveNext())
+        {
+            methodCounter++;
+            sysDictMethod = setEnumerator.current();
+
+            visibilityAttribute = sysDictMethod.getAttribute(attributeStr(SysOperationControlVisibilityAttribute));
+
+            if (!visibilityAttribute || visibilityAttribute.parmVisible() == true)  // Only show the parmMethods where the visible attribute is not specified at all, or where specified is set to true
+            {
+                sysOperationDisplayOrderAttribute = sysDictMethod.getAttribute(attributeStr(SysOperationDisplayOrderAttribute));
+
+                if (sysOperationDisplayOrderAttribute)
+                {
+                    displayOrderKey = sysOperationDisplayOrderAttribute.displayOrderKey();
+                }
+                else
+                {
+                    displayOrderKey = '1000' + int2Str(methodCounter);
+                }
+
+                sortedMap.add(displayOrderKey, sysDictMethod);
+            }
+        }
+
+        return sortedMap;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>lookupDefinitionGroupEntity</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Looks up DMF Definition group entity
+    /// </summary>
+    /// <param name = "_formStringControl">The calling control</param>
+    protected void lookupDefinitionGroupEntity(FormStringControl  _formStringControl)
+    {
+        SysTableLookup          sysTableLookup;
+        Query                   query = new Query();
+        QueryBuildDataSource    queryBuildDataSource = query.addDataSource(tablenum(DMFDefinitionGroupEntity));
+        QueryBuildRange         queryBuildRange = queryBuildDataSource.addRange(fieldNum(DMFDefinitionGroupEntity, DefinitionGroup));
+
+        queryBuildRange.value(definitionGroupNameControl.value());
+  
+        sysTableLookup = SysTableLookup::newParameters(tablenum(DMFDefinitionGroupEntity), _formStringControl);
+        sysTableLookup.parmQuery(query);
+        sysTableLookup.addLookupfield(fieldNum(DMFDefinitionGroupEntity, Entity));
+        sysTableLookup.addSelectionField(fieldNum(DMFDefinitionGroupEntity, Entity));
+        sysTableLookup.performFormLookup();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>archiveUnderSubDirControlModified</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Controlling the apperance of the archive fields
+    /// </summary>
+    /// <param name = "_formCheckBoxControl">The calling form control</param>
+    /// <returns>Whatever the super call returns</returns>
+    protected boolean archiveUnderSubDirControlModified(FormCheckBoxControl _formCheckBoxControl)
+    {
+        boolean     ret = _formCheckBoxControl.modified();
+
+        if (archiveContainerNameControl)
+        {
+            archiveContainerNameControl.visible(_formCheckBoxControl.value() == NoYes::Yes);
+            if (_formCheckBoxControl.value() == NoYes::No)
+            {
+                archiveContainerNameControl.value('');
+            }
+        }
+        
+        if (archiveDirectoryControl)
+        {
+            archiveDirectoryControl.visible(_formCheckBoxControl.value() == NoYes::No);
+            if (_formCheckBoxControl.value() == NoYes::Yes)
+            {
+                archiveDirectoryControl.value('');
+            }
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>keyVaultRefModified</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Controlling the value in the keyVaultRefDataAreaIdControl
+    /// </summary>
+    /// <param name = "_formReferenceGroupControl">The calling control</param>
+    /// <returns>Whatever the super call returns</returns>
+    protected boolean keyVaultRefModified(FormReferenceGroupControl    _formReferenceGroupControl)
+    {
+        boolean     ret = _formReferenceGroupControl.modified();    // This is the super call
+        ;
+
+        if (contractDataAreaIdControl)
+        {
+            if (keyVaultRefControl.value())
+            {
+                contractDataAreaIdControl.value(curExt());
+            }
+            else
+            {
+                contractDataAreaIdControl.value('');   // Blanking the DataAreaId field if the key vault field is blanked
+            }
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getKeyVaultCertificateRef</Name>
+				<Source><![CDATA[
+    protected KeyVaultCertificateRef getKeyVaultCertificateRef(str _methodName)
+    {
+        if (keyVaultMethodDialogFieldMap.exists(_methodName))
+        {
+            DialogField dlgFld = keyVaultMethodDialogFieldMap.lookup(_methodName);
+            return dlgFld.value();
+        }
+
+        return 0;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>lookupAzureContainer</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Looks up azure containers within the storage account
+    /// </summary>
+    /// <param name = "_formStringControl">The calling control</param>
+    protected void lookupAzureContainer(FormStringControl _formStringControl)
+    {
+        keyVaultCertificateRef = keyVaultRefControl.value();
+
+        if (controlKeyVaultMethodMap.exists(_formStringControl.name()) && controlKeyVaultMethodMap.lookup(_formStringControl.name()) != '')
+        {
+            keyVaultCertificateRef = this.getKeyVaultCertificateRef(controlKeyVaultMethodMap.lookup(_formStringControl.name()));
+        }
+                        
+        OMGAzureFolderLookup::lookupAzureFolder(_formStringControl, keyVaultCertificateRef);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>lookupAzureFileShareName</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Performs a lookup of the Azure file share name
+    /// </summary>
+    /// <param name = "_formStringControl">The calling form control</param>
+    protected void lookupAzureFileShareName(FormStringControl   _formStringControl)
+    {
+        keyVaultCertificateRef = keyVaultRefControl.value();
+
+        if (controlKeyVaultMethodMap.exists(_formStringControl.name()) && controlKeyVaultMethodMap.lookup(_formStringControl.name()) != '')
+        {
+            keyVaultCertificateRef = this.getKeyVaultCertificateRef(controlKeyVaultMethodMap.lookup(_formStringControl.name()));
+        }
+        
+        OMGFeatures::lookupAzureFileShareName(_formStringControl, keyVaultCertificateRef);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>forceLowerCase</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Ensures that the tect in the AzureFileShareNAme is lowercase
+    /// </summary>
+    /// <param name = "_formStringControl">The form stringcontrol that is the AzureFileShareName</param>
+    /// <returns>Whatever the super call returns</returns>
+    protected boolean forceLowerCase(FormStringControl _formStringControl)
+    {
+        boolean     ret = _formStringControl.modified();
+
+        str     lowerCaseString = strLwr(_formStringControl.text());
+        _formStringControl.text(lowerCaseString);
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>lookupAzureFileShareDirectory</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Performs a lookuo of directories within a Azure file share
+    /// </summary>
+    /// <param name = "_formStringControl">The calling form control</param>
+    protected void lookupAzureFileShareDirectory(FormStringControl  _formStringControl)
+    {
+        OMGAzureFolderLookup::lookupAzureFolder(_formStringControl, keyVaultRefControl.value(), fileShareNameControl.value());
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>postImportActionModified</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Controlling the visibility of the archive folder
+    /// </summary>
+    /// <param name = "_postImportActionControl">The calling formComboBoxControl</param>
+    /// <returns>Whatever the super call returns</returns>
+    protected boolean postImportActionModified(FormComboBoxControl      _postImportActionControl)
+    {
+        boolean             ret                 = _postImportActionControl.modified();
+        OMGPostImportAction postImportAction    = _postImportActionControl.selection();
+        ;
+    
+        // Show/Hide archive folder depending on selection
+        if (archiveDirectoryControl)
+        {
+            archiveDirectoryControl.visible(postImportAction == OMGPostImportAction::Archive);
+        }
+        if (archiveUnderSubDirControl)
+        {
+            archiveUnderSubDirControl.visible(postImportAction == OMGPostImportAction::Archive);
+            archiveDirectoryControl.visible(archiveUnderSubDirControl.value() == NoYes::No && postImportAction == OMGPostImportAction::Archive);
+        }
+    
+        if (archiveContainerNameControl && archiveUnderSubDirControl)
+        {
+            archiveContainerNameControl.visible(postImportAction == OMGPostImportAction::Archive &&
+                                                archiveUnderSubDirControl.value() == NoYes::Yes);
+        }
+    
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

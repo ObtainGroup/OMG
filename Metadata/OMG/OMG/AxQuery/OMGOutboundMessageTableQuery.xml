@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxQuery xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns=""
+	i:type="AxQuerySimple">
+	<Name>OMGOutboundMessageTableQuery</Name>
+	<SourceCode>
+		<Methods>
+			<Method>
+				<Name>classDeclaration</Name>
+				<Source><![CDATA[
+[Query]
+public class OMGOutboundMessageTableQuery extends QueryRun
+{
+}
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<Description>@OMG:OutboundMessages</Description>
+	<Title>@OMG:OutboundMessages</Title>
+	<DataSources>
+		<AxQuerySimpleRootDataSource>
+			<Name>OMGMessageTypeTable</Name>
+			<DynamicFields>Yes</DynamicFields>
+			<Table>OMGMessageTypeTable</Table>
+			<DataSources>
+				<AxQuerySimpleEmbeddedDataSource>
+					<Name>OMGOutboundMessageTable</Name>
+					<DynamicFields>Yes</DynamicFields>
+					<Table>OMGOutboundMessageTable</Table>
+					<DataSources />
+					<DerivedDataSources />
+					<Fields />
+					<Ranges>
+						<AxQuerySimpleDataSourceRange>
+							<Name>MessageStatus</Name>
+							<Field>MessageStatus</Field>
+							<Status>Locked</Status>
+							<Value>Ready</Value>
+						</AxQuerySimpleDataSourceRange>
+					</Ranges>
+					<Relations>
+						<AxQuerySimpleDataSourceRelation>
+							<Name>QueryDataSourceRelation1</Name>
+							<Field>MessageTypeId</Field>
+							<JoinDataSource>OMGMessageTypeTable</JoinDataSource>
+							<RelatedField>MessageTypeId</RelatedField>
+						</AxQuerySimpleDataSourceRelation>
+					</Relations>
+				</AxQuerySimpleEmbeddedDataSource>
+			</DataSources>
+			<DerivedDataSources />
+			<Fields />
+			<Ranges>
+				<AxQuerySimpleDataSourceRange>
+					<Name>Active</Name>
+					<Field>Active</Field>
+					<Status>Locked</Status>
+					<Value>Yes</Value>
+				</AxQuerySimpleDataSourceRange>
+			</Ranges>
+			<GroupBy />
+			<Having />
+			<OrderBy>
+				<AxQuerySimpleOrderByField>
+					<Name>QueryOrderByField1</Name>
+					<DataSource>OMGMessageTypeTable</DataSource>
+					<Field>ProcessingPriority</Field>
+				</AxQuerySimpleOrderByField>
+				<AxQuerySimpleOrderByField>
+					<Name>QueryOrderByField2</Name>
+					<DataSource>OMGOutboundMessageTable</DataSource>
+					<Field>CreatedDateTime</Field>
+				</AxQuerySimpleOrderByField>
+			</OrderBy>
+		</AxQuerySimpleRootDataSource>
+	</DataSources>
+</AxQuery>

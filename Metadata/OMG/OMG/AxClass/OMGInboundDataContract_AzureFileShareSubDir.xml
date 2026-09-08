@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundDataContract_AzureFileShareSubDir</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Parameter data contract for importing files from Azure file shares including its subdirectories
+/// </summary>
+[DataContract]
+class OMGInboundDataContract_AzureFileShareSubDir extends OMGInboundDataContract_AzureFileShare
+{    
+    OMGArchiveUnderSubDir       archiveUnderSourceDirectory;
+    OMGAzureArchiveFolderName   archiveFolderName;
+   
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmArchiveUnderSourceDirectory</Name>
+				<Source><![CDATA[
+    [DataMember, SysOperationDisplayOrder('10'), OMGArchiveUnderSubDir]
+    public OMGArchiveUnderSubDir parmArchiveUnderSourceDirectory(OMGArchiveUnderSubDir _archiveUnderSourceDirectory = archiveUnderSourceDirectory)
+    {
+        archiveUnderSourceDirectory = _archiveUnderSourceDirectory;
+        return archiveUnderSourceDirectory;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmArchiveFolderName</Name>
+				<Source><![CDATA[
+    [DataMember, OMGAzureArchiveContainerName, SysOperationDisplayOrder('11')]
+    public OMGAzureArchiveFolderName parmArchiveFolderName(OMGAzureArchiveFolderName _archiveFolderName = archiveFolderName)
+    {
+        archiveFolderName = _archiveFolderName;
+        return archiveFolderName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validationClassId</Name>
+				<Source><![CDATA[
+    public ClassId validationClassId()
+    {
+        return classNum(OMGAzureValidator_InboundFileShareSubDir);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialogCaption</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// The caption used on the dialog
+    /// </summary>
+    /// <returns>A descriptive text</returns>
+    public Description dialogCaption()
+    {
+        return "@OMG:ImportFromAzureFileShareSubDir";
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

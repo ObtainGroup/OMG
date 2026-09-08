@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGAzureFileShareDirectoryAttribute</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Attribute class for OMG Azure file share directory field
+/// </summary>
+public class OMGAzureFileShareDirectoryAttribute extends OMGAzureKeyVaultRefBaseAttribute
+{
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name = "_azureKeyVaultRefMethod">The keyVaultRef method</param>
+    public void new(str _azureKeyVaultRefMethod = '')
+    {
+        super(_azureKeyVaultRefMethod);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

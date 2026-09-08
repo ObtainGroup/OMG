@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGApplicationInsightsFetch</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Application Insights Fetch log object
+/// </summary>
+public class OMGApplicationInsightsFetch extends OMGApplicationInsights
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>newMessageTypeId</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Return new instance of OMGApplicationInsightsFetch
+    /// </summary>
+    /// <param name = "_messageTypeId">MessageTypeId</param>
+    /// <returns>OMGApplicationInsightsFetch</returns>
+    public static OMGApplicationInsightsFetch newMessageTypeId(str _messageTypeId)
+    {
+        return new OMGApplicationInsightsFetch(_messageTypeId);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    protected void new(str _messageTypeId)
+    {
+        super('OMG.Fetch');
+        this.addMessageTypeIdProperty(_messageTypeId);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

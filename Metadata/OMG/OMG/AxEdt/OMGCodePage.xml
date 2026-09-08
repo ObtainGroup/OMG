@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxEdt xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns=""
+	i:type="AxEdtString">
+	<Name>OMGCodePage</Name>
+	<Extends>DMFCodePage</Extends>
+	<ReferenceTable>DMFCodePageValue</ReferenceTable>
+	<ArrayElements />
+	<Relations />
+	<TableReferences>
+		<AxEdtTableReference>
+			<RelatedField>CodePage</RelatedField>
+			<Table>DMFCodePageValue</Table>
+		</AxEdtTableReference>
+	</TableReferences>
+</AxEdt>

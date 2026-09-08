@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGMessageTableCleanupService</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Service class for cleaning up expired processed OMG messages
+/// </summary>
+class OMGMessageTableCleanupService extends SysOperationServiceBase
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>cleanup</Name>
+				<Source><![CDATA[
+    /// <summary>    
+    /// This will loop through the processed messages and delete them    
+    /// </summary>
+    /// <param name = "_oMGMessageTableCleanupContract">The contract holding the parameters from the prompt</param>    
+    protected void cleanup(OMGMessageTableCleanupContract   _oMGMessageTableCleanupContract)
+    {
+        OMGMessageTypeTable     oMGMessageTypeTable;
+        OMGInboundMessageTable  oMGInboundMessageTable;
+        OMGOutboundMessageTable oMGOutboundMessageTable;
+        TransDateTime           thresholdDateTime;
+        ;
+
+        while select oMGMessageTypeTable
+            where oMGMessageTypeTable.Active == NoYes::Yes  &&
+                  oMGMessageTypeTable.Company == curExt()
+        {
+            thresholdDateTime = DateTimeUtil::addDays(DateTimeUtil::getSystemDateTime(), -oMGMessageTypeTable.RequestRetentionPeriod);
+                        
+            ttsbegin;
+                        
+            if (_oMGMessageTableCleanupContract.parmCleanInbound() == NoYes::Yes)
+            {
+                delete_from oMGInboundMessageTable
+                    where oMGInboundMessageTable.MessageStatus      == OMGProcessingStatus::Processed       &&
+                          oMGInboundMessageTable.MessageTypeId      == oMGMessageTypeTable.MessageTypeId    &&
+                          oMGInboundMessageTable.ModifiedDateTime   < thresholdDateTime;
+            }
+
+            if (_oMGMessageTableCleanupContract.parmCleanOutbound() == NoYes::Yes)
+            {
+                delete_from oMGOutboundMessageTable
+                   where oMGOutboundMessageTable.MessageStatus     == OMGProcessingStatus::Processed       &&
+                         oMGOutboundMessageTable.MessageTypeId     == oMGMessageTypeTable.MessageTypeId    &&
+                         oMGOutboundMessageTable.ModifiedDateTime  < thresholdDateTime;
+            }
+
+            ttscommit;
+        }
+        
+        info("@OMG:AllProcessedMessagesDeleted");
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

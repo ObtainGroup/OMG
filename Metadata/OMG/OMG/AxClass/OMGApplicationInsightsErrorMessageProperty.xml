@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGApplicationInsightsErrorMessageProperty</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Application Insights property for error message.
+/// </summary>
+public class OMGApplicationInsightsErrorMessageProperty extends SysApplicationInsightsProperty
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>newFromErrorMessage</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OMGApplicationInsightsErrorMessageProperty"/> class.
+    /// </summary>
+    /// <param name="_errorMessage">The error message.</param>
+    /// <returns>The new instance of the <see cref="OMGApplicationInsightsErrorMessageProperty"/> class.</returns>
+    public static OMGApplicationInsightsErrorMessageProperty newFromErrorMessage(str _errorMessage)
+    {
+        return new OMGApplicationInsightsErrorMessageProperty(_errorMessage);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initialize</Name>
+				<Source><![CDATA[
+    protected container initialize()
+    {
+        return OMGApplicationInsightsProperties::ErrorMessage;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

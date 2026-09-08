@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundMessageService</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Service class for creating inbound messages
+/// </summary>
+public class OMGInboundMessageService
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>createMessage</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Creates an inbound message based on a data contract. The message itself can be base64 encoded
+    /// </summary>
+    /// <param name = "_messageContract">The data contract</param>
+    /// <returns>A response data contract</returns>
+    public OMGInboundMessageResponseContract createMessage(OMGInboundMessageContract _messageContract)
+    {
+        OMGInboundMessageTable              inboundMessageTable;
+        OMGInboundMessageResponseContract   inboundMessageResponseContract  = new OMGInboundMessageResponseContract();
+        OMGMessageTypeTable                 messageTypeTable                = OMGMessageTypeTable::find(_messageContract.parmMessageTypeId());
+        ;
+
+        ttsbegin;
+
+        if (!OMGInboundMessageTable::exist(_messageContract.parmMessageGUID()))
+        {
+            OMGMessage      message         = _messageContract.parmMessage();
+            NoYesId         base64Encoded   = _messageContract.parmBase64Encoded();
+
+            // If the message is base64 encoded, and we are instructed to decode at insert
+            if (_messageContract.parmBase64Encoded() && _messageContract.parmDecodeOnInsert())
+            {
+                message         = oMGInboundMessageTable::decodeMessage(_messageContract.parmMessage());
+                base64Encoded   = NoYes::No;
+            }
+
+
+            OMGInboundMessageTable::createInboundMessage(_messageContract.parmMessageName(),
+                                                         _messageContract.parmMessageTypeId(), 
+                                                         message, 
+                                                         base64Encoded,
+                                                         _messageContract.parmCompany(), 
+                                                         _messageContract.parmMessageGUID(),
+                                                         _messageContract.parmSourceDateTime());
+                                               
+            if (messageTypeTable.Synchronous)
+            {
+                inboundMessageResponseContract = OMGInboundMessageTable::processMessage(inboundMessageTable);
+            }
+            else
+            {
+                // Since we are not actually processing the messsage, report that we didn't try
+                inboundMessageResponseContract.parmProcessed(false);
+            }
+        }
+
+        ttscommit;
+        
+        return inboundMessageResponseContract;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getInboundMessageTableStatus</Name>
+				<Source><![CDATA[
+    [AifCollectionTypeAttribute('return', Types::Class, classStr(OMGInboundMessageStatusContract))]
+    public List getInboundMessageTableStatus()
+    {
+        List                            statusList = new List(Types::Class);
+        OMGInboundMessageStatusContract inboundMessageStatusContract;
+        OMGInboundMessageTable          inboundMessageTable;
+
+        while select count(RecId) from inboundMessageTable
+            group by MessageStatus
+        {
+            inboundMessageStatusContract = new OMGInboundMessageStatusContract();
+            inboundMessageStatusContract.parmStatus(inboundMessageTable.MessageStatus);
+            inboundMessageStatusContract.parmRecords(inboundMessageTable.RecId);
+            statusList.addEnd(inboundMessageStatusContract);
+        }
+
+        return statusList;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>
