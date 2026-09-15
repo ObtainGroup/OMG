@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGSftpReader</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Renci.SshNet;
+using Renci.SshNet.Sftp;
+
+/// <summary>
+/// Helper class for reading files from an SFTP server
+/// </summary>
+class OMGSftpReader
+{
+    SftpClient                  sftpClient;
+
+    KeyVaultCertificateRef      keyVaultCertificateRef;
+    OMGSftpHostName             hostName;
+    OMGSftpPort                 port;
+    OMGSftpUserName             userName;
+    OMGSftpSourceDirectory      sourceDirectory;
+    OMGSftpArchiveDirectory     archiveDirectory;
+    FilenameType                fileTypeFilter;
+    OMGPostImportAction         postImportAction;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>newFromContract</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiates the class from the parameter data contract
+    /// </summary>
+    /// <param name = "_dataContract">The parameter data contract</param>
+    /// <returns>The instantiated class</returns>
+    public static OMGSftpReader newFromContract(OMGInboundDataContract_SFTP _dataContract)
+    {
+        OMGSftpReader   sftpReader = new OMGSftpReader();
+        ;
+
+        sftpReader.parmKeyVaultCertificateRef(_dataContract.parmKeyVaultCertificateRef());
+        sftpReader.parmHostName(_dataContract.parmHostName());
+        sftpReader.parmPort(_dataContract.parmPort());
+        sftpReader.parmUserName(_dataContract.parmUserName());
+        sftpReader.parmSourceDirectory(OMGFeatures::removeLastChar(_dataContract.parmSourceDirectory(), '/'));
+        sftpReader.parmArchiveDirectory(OMGFeatures::removeLastChar(_dataContract.parmArchiveDirectory(), '/'));
+        sftpReader.parmFileTypeFilter(_dataContract.parmFileTypeFilter());
+        sftpReader.parmPostImportAction(_dataContract.parmPostImportAction());
+
+        return sftpReader;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmKeyVaultCertificateRef</Name>
+				<Source><![CDATA[
+    public KeyVaultCertificateRef parmKeyVaultCertificateRef(KeyVaultCertificateRef _keyVaultCertificateRef = keyVaultCertificateRef)
+    {
+        keyVaultCertificateRef = _keyVaultCertificateRef;
+        return keyVaultCertificateRef;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmHostName</Name>
+				<Source><![CDATA[
+    public OMGSftpHostName parmHostName(OMGSftpHostName _hostName = hostName)
+    {
+        hostName = _hostName;
+        return hostName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPort</Name>
+				<Source><![CDATA[
+    public OMGSftpPort parmPort(OMGSftpPort _port = port)
+    {
+        port = _port;
+        return port;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmUserName</Name>
+				<Source><![CDATA[
+    public OMGSftpUserName parmUserName(OMGSftpUserName _userName = userName)
+    {
+        userName = _userName;
+        return userName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmSourceDirectory</Name>
+				<Source><![CDATA[
+    public OMGSftpSourceDirectory parmSourceDirectory(OMGSftpSourceDirectory _sourceDirectory = sourceDirectory)
+    {
+        sourceDirectory = _sourceDirectory;
+        return sourceDirectory;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmArchiveDirectory</Name>
+				<Source><![CDATA[
+    public OMGSftpArchiveDirectory parmArchiveDirectory(OMGSftpArchiveDirectory _archiveDirectory = archiveDirectory)
+    {
+        archiveDirectory = _archiveDirectory;
+        return archiveDirectory;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmFileTypeFilter</Name>
+				<Source><![CDATA[
+    public FilenameType parmFileTypeFilter(FilenameType _fileTypeFilter = fileTypeFilter)
+    {
+        fileTypeFilter = _fileTypeFilter;
+        return fileTypeFilter;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPostImportAction</Name>
+				<Source><![CDATA[
+    public OMGPostImportAction parmPostImportAction(OMGPostImportAction _postImportAction = postImportAction)
+    {
+        postImportAction = _postImportAction;
+        return postImportAction;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getSftpClient</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Returns a connected SFTP client
+    /// </summary>
+    /// <returns>The SFTP client</returns>
+    public SftpClient getSftpClient()
+    {
+        str     password;
+        ;
+
+        if (!sftpClient)
+        {
+            password    = KeyVaultCertificateHelper::getManualSecretValue(keyVaultCertificateRef);
+            sftpClient  = new SftpClient(hostName, port, userName, password);
+        }
+
+        if (!sftpClient.IsConnected)
+        {
+            sftpClient.Connect();
+        }
+
+        return sftpClient;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>buildFileHandleMap</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Builds a map of the files in the source directory
+    /// </summary>
+    /// <returns>The file map</returns>
+    public Map buildFileHandleMap()
+    {
+        SftpFile                        sftpFile;
+        System.Collections.IEnumerable  enumerable;
+        System.Collections.IEnumerator  enumerator;
+        Map                             fileHandleMap   = new Map(Types::String, Types::Container);
+        FolderName                      readDirectory   = sourceDirectory ? sourceDirectory : '.';
+        ;
+
+        enumerable = this.getSftpClient().ListDirectory(readDirectory, null);
+        enumerator = enumerable.GetEnumerator();
+
+        if (enumerator)
+        {
+            while (enumerator.MoveNext())
+            {
+                sftpFile = enumerator.Current;
+
+                if (!sftpFile.IsDirectory)
+                {
+                    fileHandleMap = this.addFileToMap(fileHandleMap, sftpFile);
+                }
+            }
+        }
+
+        return fileHandleMap;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>addFileToMap</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Adds the SFTP file to the map
+    /// </summary>
+    /// <param name = "_fileHandleMap">The map</param>
+    /// <param name = "_sftpFile">The SFTP file to add</param>
+    /// <returns>The map</returns>
+    public Map addFileToMap(Map         _fileHandleMap,
+                            SftpFile    _sftpFile)
+    {
+        utcdatetime                     modifiedUTCDateTime;
+        TransDate                       modifiedDate;
+        TimeOfDay                       modifiedTime;
+        str                             modifiedDateTimeString;
+        FilenameType                    fileType;
+        ;
+
+        fileType = conPeek(fileNameSplit(_sftpFile.Name), 3);
+
+        if (!fileTypeFilter || fileTypeFilter == fileType)
+        {
+            modifiedUTCDateTime     = _sftpFile.LastWriteTimeUtc;
+            modifiedDate            = DateTimeUtil::date(modifiedUTCDateTime);
+            modifiedTime            = DateTimeUtil::time(modifiedUTCDateTime);
+            modifiedDateTimeString  = date2Str(modifiedDate, 321, DateDay::Digits2, DateSeparator::Hyphen, DateMonth::Digits2, DateSeparator::Hyphen, DateYear::Digits4, DateFlags::None) +
+                                               ' ' +  time2Str(modifiedTime, TimeSeparator::Colon, TimeSeparator::Colon);
+
+            // Adding the full path, the file name and the modified date/time as a container to the map
+            _fileHandleMap.add(modifiedDateTimeString + _sftpFile.Name, [_sftpFile.FullName, _sftpFile.Name, modifiedUTCDateTime]);
+        }
+
+        return _fileHandleMap;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>readSingleFile</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Reads a file on the SFTP server, and returns the content
+    /// </summary>
+    /// <param name = "_fullFileName">The full path of the file to read</param>
+    /// <param name = "_base64Encode">Should the content be base64 encoded</param>
+    /// <param name = "_codePage">The codepage to use when reading the file</param>
+    /// <returns>The file content</returns>
+    public System.String readSingleFile(Filename        _fullFileName,
+                                        OMGBase64Encode _base64Encode,
+                                        DMFCodePage     _codePage = '850')
+    {
+        System.IO.Stream            sftpStream;
+        System.IO.StreamReader      streamReader;
+        System.String               line;
+        ;
+
+        sftpStream = this.getSftpClient().OpenRead(_fullFileName);
+
+        if (_base64Encode)
+        {
+            System.IO.MemoryStream memoryStream = new System.IO.MemoryStream();
+            sftpStream.CopyTo(memoryStream);
+            System.Byte[] bytes = memoryStream.ToArray();
+
+            line = System.Convert::ToBase64String(bytes);
+            memoryStream.Dispose();
+            sftpStream.Dispose();
+        }
+        else
+        {
+            streamReader    = new System.IO.StreamReader(sftpStream,
+                                                         System.Text.Encoding::GetEncoding(str2Int(_codePage)));
+
+            line            = streamReader.ReadToEnd();
+
+            streamReader.Close();
+            streamReader.Dispose();
+        }
+
+        return line;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>directoryExists</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Checks if a directory exists on the SFTP server
+    /// </summary>
+    /// <param name = "_directory">The directory to check</param>
+    /// <returns>True if the directory exists</returns>
+    public boolean directoryExists(FolderName _directory)
+    {
+        return this.getSftpClient().Exists(_directory);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>moveToArchiveDirectory</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Moves a file to the archive directory
+    /// </summary>
+    /// <param name = "_fullFileName">The full path of the file to move</param>
+    /// <param name = "_fileName">The name of the file</param>
+    public void moveToArchiveDirectory(Filename     _fullFileName,
+                                       Filename     _fileName)
+    {
+        SftpClient  connectedClient = this.getSftpClient();
+        str         targetPath;
+        ;
+
+        if (archiveDirectory)
+        {
+            if (!connectedClient.Exists(archiveDirectory))
+            {
+                connectedClient.CreateDirectory(archiveDirectory);
+                info(strFmt("@OMG:ArchiveFolderCreated", archiveDirectory));
+            }
+
+            targetPath = archiveDirectory + '/' + _fileName;
+
+            // Overwrite an already archived file with the same name
+            if (connectedClient.Exists(targetPath))
+            {
+                connectedClient.DeleteFile(targetPath);
+            }
+
+            connectedClient.RenameFile(_fullFileName, targetPath);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>deleteFile</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Deletes a file on the SFTP server
+    /// </summary>
+    /// <param name = "_fullFileName">The full path of the file to delete</param>
+    public void deleteFile(Filename     _fullFileName)
+    {
+        this.getSftpClient().DeleteFile(_fullFileName);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>postImportAction</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Archives or deletes the file depending on the setup in the data contract
+    /// </summary>
+    /// <param name = "_dataContract">The data contract</param>
+    /// <param name = "_fullFileName">The full path of the file</param>
+    /// <param name = "_fileName">The name of the file</param>
+    public void postImportAction(OMGInboundDataContract_SFTP _dataContract,
+                                 Filename                    _fullFileName,
+                                 Filename                    _fileName)
+    {
+        ;
+
+        switch (_dataContract.parmPostImportAction())
+        {
+            case OMGPostImportAction::Archive   :
+                this.moveToArchiveDirectory(_fullFileName, _fileName);
+                break;
+            case OMGPostImportAction::Delete    :
+                this.deleteFile(_fullFileName);
+                break;
+            case OMGPostImportAction::NoAction  :
+                break;
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>close</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Disconnects from the SFTP server and releases the client
+    /// </summary>
+    public void close()
+    {
+        if (sftpClient)
+        {
+            if (sftpClient.IsConnected)
+            {
+                sftpClient.Disconnect();
+            }
+
+            sftpClient.Dispose();
+            sftpClient = null;
+        }
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

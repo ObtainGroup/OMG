@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGSftpValidator</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Validation class for the SFTP parameters
+/// </summary>
+class OMGSftpValidator extends OMGAzureValidator
+{
+    OMGSftpReader   sftpReader;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiates the SFTP reader and connects to the SFTP server
+    /// </summary>
+    protected void init()
+    {
+        sftpReader = OMGSftpReader::newFromContract(this.parmDataContract());
+        sftpReader.getSftpClient();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateConnectionParameters</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates that the connection parameters have been specified
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    protected boolean validateConnectionParameters()
+    {
+        OMGInboundDataContract_SFTP inboundDataContract = this.parmDataContract();
+        boolean                     ret                 = true;
+        ;
+
+        if (!inboundDataContract.parmHostName())
+        {
+            ret = checkFailed("@OMG:SftpHostNameMissing");
+        }
+
+        if (!inboundDataContract.parmUserName())
+        {
+            ret = checkFailed("@OMG:SftpUserNameMissing");
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateSourceDirectory</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates the source directory on the SFTP server
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    protected boolean validateSourceDirectory()
+    {
+        OMGInboundDataContract_SFTP inboundDataContract = this.parmDataContract();
+        boolean                     ret                 = true;
+        ;
+
+        if (inboundDataContract.parmSourceDirectory()
+            && !sftpReader.directoryExists(OMGFeatures::removeLastChar(inboundDataContract.parmSourceDirectory(), '/')))
+        {
+            ret = checkFailed(strFmt("@OMG:SftpSourceDirectoryDoesNotExist", inboundDataContract.parmSourceDirectory()));
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateArchiving</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates the archiving parameters
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    protected boolean validateArchiving()
+    {
+        OMGInboundDataContract_SFTP inboundDataContract = this.parmDataContract();
+        boolean                     ret                 = true;
+        ;
+
+        if (inboundDataContract.parmPostImportAction() == OMGPostImportAction::Archive && !inboundDataContract.parmArchiveDirectory())
+        {
+            ret = checkFailed("@OMG:ArchiveDirectoryMissing");
+        }
+
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validate</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates the connection parameters, the key vault secret, the connection and the directories
+    /// </summary>
+    /// <returns>True if all ok</returns>
+    public boolean validate()
+    {
+        boolean             ret         = this.validateConnectionParameters();
+        boolean             sourceOk    = true;
+        boolean             archiveOk   = true;
+        System.Exception    clrException;
+        str                 errorMessage;
+        ;
+
+        if (ret)
+        {
+            try
+            {
+                // Validates the key vault secret and connects to the SFTP server
+                ret = super();
+            }
+            catch (Exception::CLRError)
+            {
+                clrException = CLRInterop::getLastException();
+
+                if (clrException)
+                {
+                    if (clrException.get_InnerException())
+                    {
+                        clrException = clrException.get_InnerException();
+                    }
+
+                    errorMessage = clrException.get_Message();
+                }
+
+                ret = checkFailed(strFmt("@OMG:SftpConnectionFailed", errorMessage));
+            }
+        }
+
+        if (ret)
+        {
+            sourceOk    = this.validateSourceDirectory();
+            archiveOk   = this.validateArchiving();
+        }
+
+        if (sftpReader)
+        {
+            sftpReader.close();
+        }
+
+        return ret && sourceOk && archiveOk;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

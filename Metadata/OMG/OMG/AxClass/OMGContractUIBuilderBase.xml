@@ -34,6 +34,11 @@ class OMGContractUIBuilderBase
     // DMF inbound handler
     DialogField                     definitionGroupNameControl;
 
+    // SFTP
+    DialogField                     sftpHostNameControl;
+    DialogField                     sftpPortControl;
+    DialogField                     sftpUserNameControl;
+
 }
 ]]></Declaration>
 		<Methods>
@@ -190,6 +195,29 @@ class OMGContractUIBuilderBase
             archiveContainerNameControl = _dialogField;
         }
         // Azure
+
+        // SFTP
+        if (_sysDictMethod.getAttribute(classStr(OMGSftpHostNameAttribute)))
+        {
+            sftpHostNameControl = _dialogField;
+        }
+
+        if (_sysDictMethod.getAttribute(classStr(OMGSftpPortAttribute)))
+        {
+            sftpPortControl = _dialogField;
+        }
+
+        if (_sysDictMethod.getAttribute(classStr(OMGSftpUserNameAttribute)))
+        {
+            sftpUserNameControl = _dialogField;
+        }
+
+        // Lookup on SFTP directories
+        if (_sysDictMethod.getAttribute(classStr(OMGSftpDirectoryAttribute)))
+        {
+            _dialogField.registerOverrideMethod(methodStr(FormStringControl, lookup), methodStr(OMGContractUIBuilderBase, lookupSftpDirectory), this);
+        }
+        // SFTP
     }
 
 ]]></Source>
@@ -669,6 +697,24 @@ class OMGContractUIBuilderBase
     protected void lookupAzureFileShareDirectory(FormStringControl  _formStringControl)
     {
         OMGAzureFolderLookup::lookupAzureFolder(_formStringControl, keyVaultRefControl.value(), fileShareNameControl.value());
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>lookupSftpDirectory</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Performs a lookup of directories on the SFTP server
+    /// </summary>
+    /// <param name = "_formStringControl">The calling form control</param>
+    protected void lookupSftpDirectory(FormStringControl  _formStringControl)
+    {
+        OMGSftpFolderLookup::lookupSftpFolder(_formStringControl,
+                                              keyVaultRefControl.value(),
+                                              sftpHostNameControl.value(),
+                                              sftpPortControl.value(),
+                                              sftpUserNameControl.value());
     }
 
 ]]></Source>

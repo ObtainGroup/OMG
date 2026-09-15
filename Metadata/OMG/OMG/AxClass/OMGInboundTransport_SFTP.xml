@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundTransport_SFTP</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Handler class for importing files from an SFTP server
+/// </summary>
+class OMGInboundTransport_SFTP extends OMGInboundTransport
+{
+    OMGSftpReader               sftpReader;
+    OMGInboundDataContract_SFTP dataContract;
+    int                         messageCounter;
+    int64                       messageSize;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>messageCount</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Returns the number of messages fetched
+    /// </summary>
+    /// <returns>Number of messages</returns>
+    protected int64 messageCount()
+    {
+        return messageCounter;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>messageSize</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Returns the total size of the messages fetched
+    /// </summary>
+    /// <returns>Size in bytes</returns>
+    protected int64 messageSize()
+    {
+        return messageSize;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dataContractClass</Name>
+				<Source><![CDATA[
+    public ClassId dataContractClass()
+    {
+        return classNum(OMGInboundDataContract_SFTP);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>doTransport</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Imports the files
+    /// </summary>
+    /// <param name = "_dataContract">Data contract holding the messageTypeId</param>
+    public void doTransport(OMGInboundTransportContract _dataContract)
+    {
+        OMGMessageTypeTable                     messageTypeTable = OMGMessageTypeTable::find(_dataContract.parmMessageTypeId());
+        Map                                     fileMap;
+        ;
+
+        dataContract = FormJsonSerializer::deserializeObject(this.dataContractClass(), messageTypeTable.InboundSerializedParameterContract) as OMGInboundDataContract_SFTP;
+
+        if (dataContract && dataContract.parmHostName() && dataContract.parmUserName() && dataContract.parmKeyVaultCertificateRef())
+        {
+            sftpReader = OMGSftpReader::newFromContract(dataContract);
+
+            fileMap = sftpReader.buildFileHandleMap();
+            this.processFileMap(fileMap, dataContract.parmCodePage(), messageTypeTable.MessageTypeId);
+
+            sftpReader.close();
+        }
+        else
+        {
+            Error(strFmt("@OMG:FaultyMessageTypeParameters", messageTypeTable.MessageTypeId));
+        }
+
+        info(strFmt("@OMG:MessagesFetched", messageTypeTable.MessageTypeId, messageCounter));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processFileMap</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Imports the files in the map
+    /// </summary>
+    /// <param name = "_fileMap">The map of files</param>
+    /// <param name = "_codePage">The codepage in the files</param>
+    /// <param name = "_messageTypeId">The message type</param>
+    public void processFileMap(Map              _fileMap,
+                               DMFCodePage      _codePage,
+                               OMGMessageTypeId _messageTypeId)
+    {
+        MapEnumerator   mapEnumerator = _fileMap.getEnumerator();
+        OMGMessage      oMGMessage;
+        container       valueContainer; //Full path, file name, modified date/time
+        ;
+
+        while (mapEnumerator.moveNext())
+        {
+            valueContainer = mapEnumerator.currentValue();
+
+            oMGMessage = sftpReader.readSingleFile(conPeek(valueContainer, 1), dataContract.parmBase64Encode(), _codePage);
+
+            this.generateInboundMessage(oMGMessage, conPeek(valueContainer, 1), conPeek(valueContainer, 2), _messageTypeId, conPeek(valueContainer, 3));
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>generateInboundMessage</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Generates a record in the inbound message table based on the file
+    /// </summary>
+    /// <param name = "_message">The message content</param>
+    /// <param name = "_fullFileName">The full path of the file</param>
+    /// <param name = "_fileName">The name of the file</param>
+    /// <param name = "_messageTypeId">The message type</param>
+    /// <param name = "_modifiedValue">The modified date/time</param>
+    public void generateInboundMessage(OMGMessage               _message,
+                                       Filename                 _fullFileName,
+                                       Filename                 _fileName,
+                                       OMGMessageTypeId         _messageTypeId,
+                                       utcdatetime              _modifiedValue)
+    {
+        OMGInboundMessageTable  inboundMessageTable;
+
+        try
+        {
+            ttsbegin;
+
+            inboundMessageTable = OMGInboundMessageTable::createInboundMessage(_fileName,
+                                                                               _messageTypeId,
+                                                                               _message,
+                                                                               dataContract.parmBase64Encode(),
+                                                                               OMGMessageTypeTable::find(_messageTypeId).Company,
+                                                                               newGuid(),
+                                                                               _modifiedValue);
+
+            // Handles the post import action (Archive/Delete/NoAction)
+            sftpReader.postImportAction(dataContract, _fullFileName, _fileName);
+
+            ttscommit;
+
+            this.onInboundMessageInserted(inboundMessageTable);
+
+            messageCounter++;
+            messageSize += strLen(_message);
+        }
+
+        catch (Exception::Error)
+        {
+            throw Error("@ElectronicReporting:ImportCancelled");
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>description</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Description of class
+    /// </summary>
+    /// <returns>The description</returns>
+    public static Description description()
+    {
+        return "@OMG:ImportFilesFromSftp";
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

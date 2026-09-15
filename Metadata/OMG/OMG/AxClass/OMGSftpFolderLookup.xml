@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGSftpFolderLookup</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Renci.SshNet;
+using Renci.SshNet.Sftp;
+
+/// <summary>
+/// Class handling the lookup of directories on an SFTP server
+/// </summary>
+class OMGSftpFolderLookup
+{
+    KeyVaultCertificateRef      keyVaultCertificateRef;
+    OMGSftpHostName             hostName;
+    OMGSftpPort                 port;
+    OMGSftpUserName             userName;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmKeyVaultCertificateRef</Name>
+				<Source><![CDATA[
+    public KeyVaultCertificateRef parmKeyVaultCertificateRef(KeyVaultCertificateRef _keyVaultCertificateRef = keyVaultCertificateRef)
+    {
+        keyVaultCertificateRef = _keyVaultCertificateRef;
+
+        return keyVaultCertificateRef;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmHostName</Name>
+				<Source><![CDATA[
+    public OMGSftpHostName parmHostName(OMGSftpHostName _hostName = hostName)
+    {
+        hostName = _hostName;
+
+        return hostName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPort</Name>
+				<Source><![CDATA[
+    public OMGSftpPort parmPort(OMGSftpPort _port = port)
+    {
+        port = _port;
+
+        return port;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmUserName</Name>
+				<Source><![CDATA[
+    public OMGSftpUserName parmUserName(OMGSftpUserName _userName = userName)
+    {
+        userName = _userName;
+
+        return userName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>construct</Name>
+				<Source><![CDATA[
+    public static OMGSftpFolderLookup construct()
+    {
+        return new OMGSftpFolderLookup();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>lookupSftpFolder</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Instantiates the class, calls the parm methods and then the lookup
+    /// </summary>
+    /// <param name = "_formStringControl">The calling string control</param>
+    /// <param name = "_keyVaultCertificateRef">The KeyVaultCertificateRef holding the password</param>
+    /// <param name = "_hostName">The SFTP host name</param>
+    /// <param name = "_port">The SFTP port</param>
+    /// <param name = "_userName">The SFTP user name</param>
+    public static void lookupSftpFolder(FormStringControl      _formStringControl,
+                                        KeyVaultCertificateRef _keyVaultCertificateRef,
+                                        OMGSftpHostName        _hostName,
+                                        OMGSftpPort            _port,
+                                        OMGSftpUserName        _userName)
+    {
+        OMGSftpFolderLookup    sftpFolderLookup = OMGSftpFolderLookup::construct();
+        ;
+
+        if (!_keyVaultCertificateRef || !_hostName || !_userName)
+        {
+            warning("@OMG:SftpLookupMissingConnection");
+            return;
+        }
+
+        sftpFolderLookup.parmKeyVaultCertificateRef(_keyVaultCertificateRef);
+        sftpFolderLookup.parmHostName(_hostName);
+        sftpFolderLookup.parmPort(_port);
+        sftpFolderLookup.parmUserName(_userName);
+
+        sftpFolderLookup.lookup(_formStringControl);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>lookup</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Calls the lookup form
+    /// </summary>
+    /// <param name = "_formStringControl">The calling forms string control</param>
+    public void lookup(FormStringControl    _formStringControl)
+    {
+        Args    args = new Args();
+        FormRun formRun;
+        ;
+
+        args.name(formStr(OMGSftpFolderLookup));
+        args.caller(this);
+
+        formRun = classFactory.formRunClass(args);
+        formRun.init();
+
+        _formStringControl.performFormLookup(formRun);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>buildFolderTree_Sftp</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Builds a tree control of the directories on the SFTP server
+    /// </summary>
+    /// <param name = "_formTreeControl">The tree control</param>
+    /// <param name = "_keyVaultCertificateRef">The KeyVaultCertificateRef holding the password</param>
+    /// <param name = "_hostName">The SFTP host name</param>
+    /// <param name = "_port">The SFTP port</param>
+    /// <param name = "_userName">The SFTP user name</param>
+    /// <returns>The tree control</returns>
+    public static FormTreeControl buildFolderTree_Sftp(FormTreeControl        _formTreeControl,
+                                                       KeyVaultCertificateRef _keyVaultCertificateRef,
+                                                       OMGSftpHostName        _hostName,
+                                                       OMGSftpPort            _port,
+                                                       OMGSftpUserName        _userName)
+    {
+        SftpClient  sftpClient = new SftpClient(_hostName,
+                                                _port,
+                                                _userName,
+                                                KeyVaultCertificateHelper::getManualSecretValue(_keyVaultCertificateRef));
+        ;
+
+        void loopDirectories(str            _path,
+                             str            _relativePath,
+                             TreeItemIdx    _treeItemIdx)
+        {
+            System.Collections.IEnumerable  enumerable = sftpClient.ListDirectory(_path, null);
+            System.Collections.IEnumerator  enumerator = enumerable.GetEnumerator();
+            SftpFile                        sftpFile;
+            str                             relativePath;
+            TreeItemIdx                     treeItemIdx;
+
+            while (enumerator.MoveNext())
+            {
+                sftpFile = enumerator.Current;
+
+                if (sftpFile.IsDirectory && sftpFile.Name != '.' && sftpFile.Name != '..')
+                {
+                    relativePath = _relativePath ? _relativePath + '/' + sftpFile.Name : sftpFile.Name;
+                    treeItemIdx  = SysFormTreeControl::addTreeItem(_formTreeControl, sftpFile.Name, _treeItemIdx, relativePath);
+
+                    loopDirectories(relativePath, relativePath, treeItemIdx);
+                }
+            }
+        }
+
+        sftpClient.Connect();
+
+        loopDirectories('.', '', FormTreeAdd::Root);
+
+        sftpClient.Disconnect();
+        sftpClient.Dispose();
+
+        SysFormTreeControl::expandTree(_formTreeControl, _formTreeControl.getRoot(), 255);
+
+        return _formTreeControl;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

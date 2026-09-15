@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundDataContract_SFTP</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Parameter data contract for importing files from an SFTP server
+/// </summary>
+[DataContract]
+class OMGInboundDataContract_SFTP extends OMGInboundDataContract_Azure
+{
+    OMGSftpHostName             hostName;
+    OMGSftpPort                 port = 22;
+    OMGSftpUserName             userName;
+    OMGSftpSourceDirectory      sourceDirectory;
+    OMGSftpArchiveDirectory     archiveDirectory;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmHostName</Name>
+				<Source><![CDATA[
+    [DataMember, OMGSftpHostNameAttribute, SysOperationDisplayOrder('3')]
+    public OMGSftpHostName parmHostName(OMGSftpHostName _hostName = hostName)
+    {
+        hostName = _hostName;
+        return hostName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPort</Name>
+				<Source><![CDATA[
+    [DataMember, OMGSftpPortAttribute, SysOperationDisplayOrder('4')]
+    public OMGSftpPort parmPort(OMGSftpPort _port = port)
+    {
+        port = _port;
+        return port;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmUserName</Name>
+				<Source><![CDATA[
+    [DataMember, OMGSftpUserNameAttribute, SysOperationDisplayOrder('5')]
+    public OMGSftpUserName parmUserName(OMGSftpUserName _userName = userName)
+    {
+        userName = _userName;
+        return userName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmSourceDirectory</Name>
+				<Source><![CDATA[
+    [DataMember, OMGSftpDirectoryAttribute, SysOperationDisplayOrder('10')]
+    public OMGSftpSourceDirectory parmSourceDirectory(OMGSftpSourceDirectory _sourceDirectory = sourceDirectory)
+    {
+        sourceDirectory = _sourceDirectory;
+        return sourceDirectory;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmArchiveDirectory</Name>
+				<Source><![CDATA[
+    [DataMember, OMGSftpDirectoryAttribute, OMGArchiveDirectory, SysOperationDisplayOrder('11')]
+    public OMGSftpArchiveDirectory parmArchiveDirectory(OMGSftpArchiveDirectory _archiveDirectory = archiveDirectory)
+    {
+        archiveDirectory = _archiveDirectory;
+        return archiveDirectory;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validationClassId</Name>
+				<Source><![CDATA[
+    public ClassId validationClassId()
+    {
+        return classNum(OMGSftpValidator);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>dialogCaption</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// The caption used on the dialog
+    /// </summary>
+    /// <returns>A descriptive text</returns>
+    public Description dialogCaption()
+    {
+        return "@OMG:ImportFromSftp";
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>
