@@ -159,8 +159,6 @@ stay painless.
 ```
 Metadata/OMG           The OMG model — the product itself
 Metadata/OMGTutorial   Worked examples of every extension point
-Projects/              Visual Studio projects and solutions
-BuildAutomation/       Azure DevOps YAML pipeline for X++ builds
 ```
 
 ## Licensing
