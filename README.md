@@ -102,18 +102,22 @@ archived, deleted or left in place after import.
 
 ## Getting started
 
-1. **Clone the repository.**
+1. **Clone the repository.** The repository root *is* the `OMG` package
+   folder, so clone it straight into your `PackagesLocalDirectory` (commonly
+   `K:\AosService\PackagesLocalDirectory`):
 
    ```bash
-   git clone https://github.com/ObtainGroup/OMG.git
+   git clone https://github.com/ObtainGroup/OMG.git K:\AosService\PackagesLocalDirectory\OMG
    ```
 
-   Copy `Metadata/OMG` into your `PackagesLocalDirectory` (commonly
-   `K:\AosService\PackagesLocalDirectory`), or point your Visual Studio model
-   store at this repository.
+   If you would rather keep the clone elsewhere, clone it to a folder of your
+   choice and create a symbolic link named `OMG` in `PackagesLocalDirectory`
+   that points at it. Either way the folder must be called `OMG`, matching the
+   package name.
 
-2. **Build** the `OMG` model from Visual Studio (*Dynamics 365 → Build models*)
-   or with `xppc`, then run a **database synchronize**.
+2. **Build** the `OMG` package from Visual Studio (*Dynamics 365 → Build
+   models*) or with `xppc`, then run a **database synchronize**. The package
+   holds both the `OMG` and the `OMGTutorial` model.
 
 3. **Enable the configuration key** for OMG and assign yourself the `OMGAdmin`
    role.
@@ -156,10 +160,24 @@ stay painless.
 
 ## Repository layout
 
+The repository root is a single Dynamics 365 package named `OMG`, containing
+two models:
+
 ```
-Metadata/OMG           The OMG model — the product itself
-Metadata/OMGTutorial   Worked examples of every extension point
+Descriptor/            Model descriptors
+  OMG.xml              The OMG model
+  OMGTutorial.xml      The OMGTutorial model
+OMG/                   The OMG model — the product itself
+  AxClass/             One folder per element type: AxTable, AxForm,
+  AxTable/             AxDataEntityView, AxSecurityRole, AxLabelFile, ...
+  ...
+OMGTutorial/           Worked examples of every extension point
+  AxClass/
 ```
+
+Building the package also creates `bin/`, `Resources/`, `XppMetadata/` and
+`BuildModelResult.*` files next to these folders. They are build output and
+are excluded by `.gitignore`.
 
 ## Licensing
 
