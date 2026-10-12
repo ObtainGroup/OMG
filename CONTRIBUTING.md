@@ -14,8 +14,8 @@ request.
 - **Suggest a transport or handler.** If you have built one for your own use
   and would like it in the product, open an issue before writing the pull
   request so we can agree on the shape.
-- **Improve the documentation.** Corrections to the README, the tutorial model
-  or the walkthrough are welcome and are the easiest contributions to merge.
+- **Improve the documentation.** Corrections to the README or the tutorial
+  model are welcome and are the easiest contributions to merge.
 - **Report a security vulnerability.** Not here — see
   [SECURITY.md](SECURITY.md). Please do not open a public issue.
 
