@@ -133,8 +133,6 @@ archived, deleted or left in place after import.
 6. **Watch it.** Open the inbound message workspace and follow the record
    through its statuses.
 
-A step-by-step walkthrough with screenshots is in the [documentation](docs/).
-
 ## Extending OMG
 
 OMG is designed to be extended, and the `OMGTutorial` model in this repository
