@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGTutorialLedgerJournalHeaderDataContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[DataContract]
+class OMGTutorialLedgerJournalHeaderDataContract
+{
+    DataAreaId              dataAreaId;
+    LedgerJournalNameId     journalNameId;
+    Name                    name;
+    List                    lines;
+
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmDataAreaId</Name>
+				<Source><![CDATA[
+    [DataMember("dataAreaId")]
+    public DataAreaId parmDataAreaId(DataAreaId _dataAreaId = dataAreaId)
+    {
+        dataAreaId = _dataAreaId;
+        return dataAreaId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmLedgerJournalNameId</Name>
+				<Source><![CDATA[
+    [DataMember("journalName")]
+    public LedgerJournalNameId parmLedgerJournalNameId(LedgerJournalNameId _journalNameId = journalNameId)
+    {
+        journalNameId = _journalNameId;
+        return journalNameId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmName</Name>
+				<Source><![CDATA[
+    [DataMember("description")]
+    public Name parmName(Name _name = name)
+    {
+        name = _name;
+        return name;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmLines</Name>
+				<Source><![CDATA[
+    [DataMember("lines"), DataCollection(Types::Class, classStr(OMGTutorialLedgerJournalLineDataContract))
+    ]
+    public List parmLines(List _lines = lines)
+    {
+        lines = _lines;
+        return lines;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGTutorialMessageProcessor</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+class OMGTutorialMessageProcessor extends OMGInboundMessageHandler implements OMGIInboundMessageHandler
+{
+}
+
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>description</Name>
+				<Source><![CDATA[
+    public static Description description()
+    {
+        // Description shown in the dropdown on message type setup
+        return "My little POC class";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateMessageTypeParameters</Name>
+				<Source><![CDATA[
+    public boolean validateMessageTypeParameters(OMGMessageTypeTable    _messageTypeTable)
+    {
+        // Place validation of processing parameters (if any) here
+
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processMessage</Name>
+				<Source><![CDATA[
+    public OMGInboundMessageResponseContract processMessage(OMGInboundMessageTable   _inboundMessage)
+    {
+        OMGInboundMessageResponseContract   responseContract = new OMGInboundMessageResponseContract();
+        ;
+
+        // Place your custom processing logic here
+
+        responseContract.parmProcessed(true);   // Indicates if we try to process the message
+        responseContract.parmProcessedOk(true); // Indicates if the processing was sucessful
+        responseContract.parmResponse("The processing was ok"); // Place any response/error text here
+        responseContract.parmProcessingStatus(OMGProcessingStatus::Processed);  // Force a specific processing status
+
+        return responseContract;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

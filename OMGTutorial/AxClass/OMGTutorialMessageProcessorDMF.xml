@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGTutorialMessageProcessorDMF</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+class OMGTutorialMessageProcessorDMF extends OMGMessageProcessorDMF
+{
+    }
+
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>preTargetProcessing</Name>
+				<Source><![CDATA[
+    public void preTargetProcessing(DMFDefinitionGroupName      _definitionGroupName,
+                                    DMFExecutionId              _executionId,
+                                    DMFEntityName               _entityName,
+                                    OMGInboundMessageTable      _inboundMessage)
+    {
+        // Create a new sales order, and populate SalesId on Staging table
+        SalesTable      salesTable;
+        CustTable       custTable = CustTable::find('004003');
+        NumberSeq       numberSeq;
+        ;
+
+        ttsbegin;
+
+        salesTable.clear();
+        salesTable.initValue();
+                    
+        numberSeq = NumberSeq::newGetNum(SalesParameters::numRefSalesId());
+        numberSeq.used();
+        
+        salesTable.SalesId          = numberSeq.num();
+        salesTable.CustAccount      = custTable.AccountNum;
+        salesTable.initFromCustTable();
+
+        salesTable.InventSiteId = custTable.InventSiteId;
+        salesTable.InventLocationId = custTable.InventLocation;
+
+        salesTable.insert();
+
+        // --------
+        SalesOrderLineV2Staging     salesOrderLineV2Staging;
+
+        while select forupdate salesOrderLineV2Staging
+            where salesOrderLineV2Staging.DefinitionGroup   == _definitionGroupName   &&
+                  salesOrderLineV2Staging.ExecutionId       == _executionId
+        {
+            salesOrderLineV2Staging.SalesOrderNumber = salesTable.SalesId;
+            salesOrderLineV2Staging.update();
+        }
+
+        ttscommit;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>postTargetProcessing</Name>
+				<Source><![CDATA[
+    /// <summary>
+    ///
+    /// </summary>
+    /// <param name = "_definitionGroupName"></param>
+    /// <param name = "_executionId"></param>
+    /// <param name = "_entityName"></param>
+    /// <param name = "_inboundMessage"></param>
+    public void postTargetProcessing(DMFDefinitionGroupName _definitionGroupName, DMFExecutionId _executionId, DMFEntityName _entityName, OMGInboundMessageTable _inboundMessage)
+    {
+        super(_definitionGroupName, _executionId, _entityName, _inboundMessage);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processMessage</Name>
+				<Source><![CDATA[
+    /// <summary>
+    ///
+    /// </summary>
+    /// <param name = "_inboundMessage"></param>
+    /// <returns></returns>
+    public OMGInboundMessageResponseContract processMessage(OMGInboundMessageTable _inboundMessage)
+    {
+        OMGInboundMessageResponseContract ret;
+    
+        ret = super(_inboundMessage);
+    
+        return ret;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processToTarget</Name>
+				<Source><![CDATA[
+    /// <summary>
+    ///
+    /// </summary>
+    /// <param name = "_definitionGroupName"></param>
+    /// <param name = "_executionId"></param>
+    /// <param name = "_entityName"></param>
+    /// <param name = "_inboundMessage"></param>
+    public void processToTarget(DMFDefinitionGroupName _definitionGroupName, DMFExecutionId _executionId, DMFEntityName _entityName, OMGInboundMessageTable _inboundMessage)
+    {
+        super(_definitionGroupName, _executionId, _entityName, _inboundMessage);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

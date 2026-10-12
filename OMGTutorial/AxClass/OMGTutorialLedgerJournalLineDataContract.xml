@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGTutorialLedgerJournalLineDataContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[DataContract]
+class OMGTutorialLedgerJournalLineDataContract
+{        
+    LedgerJournalTransTxt   text;   
+    TransDate               transDate;    
+    AmountCurDebit          debitAmount;
+    DimensionDisplayValue   accountDisplayValue;
+    LedgerJournalACType     accountType;
+    AmountCurCredit         creditAmount;
+    CurrencyCode            currencyCode;
+    InvoiceId               invoiceId;
+    DueDate                 dueDate;    
+    PaymTermId              paymTermId;
+    TaxItemGroup            itemSalesTaxGroup;    
+    TaxGroupJournal         salesTaxGroup;
+    
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmTxt</Name>
+				<Source><![CDATA[
+    [DataMember("text")]
+    public LedgerJournalTransTxt parmTxt(LedgerJournalTransTxt _text = text)
+    {
+        text = _text;
+        return text;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmTransDate</Name>
+				<Source><![CDATA[
+    [DataMember("transDate")]
+    public TransDate parmTransDate(TransDate _transDate = transDate)
+    {
+        transDate = _transDate;
+        return transDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDebitAmount</Name>
+				<Source><![CDATA[
+    [DataMember("debitAmount")]
+    public AmountCurDebit parmDebitAmount(AmountCurDebit _debitAmount = debitAmount)
+    {
+        debitAmount = _debitAmount;
+        return debitAmount;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCreditAmount</Name>
+				<Source><![CDATA[
+    [DataMember("debitAmount")]
+    public AmountCurCredit parmCreditAmount(AmountCurCredit _creditAmount = creditAmount)
+    {
+        creditAmount = _creditAmount;
+        return creditAmount;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmAccountDisplayValue</Name>
+				<Source><![CDATA[
+    [DataMember("accountDisplayValue")]
+    public DimensionDisplayValue parmAccountDisplayValue(DimensionDisplayValue _accountDisplayValue = accountDisplayValue)
+    {
+        accountDisplayValue = _accountDisplayValue;
+        return accountDisplayValue;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmAccounType</Name>
+				<Source><![CDATA[
+    [DataMember("accountType")]
+    public LedgerJournalACType parmAccounType(LedgerJournalACType _accountType = accountType)
+    {
+        accountType = _accountType;
+        return accountType;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCurrencyCode</Name>
+				<Source><![CDATA[
+    [DataMember("currencyCode")]
+    public CurrencyCode parmCurrencyCode(CurrencyCode _currencyCode = currencyCode)
+    {
+        currencyCode = _currencyCode;
+        return currencyCode;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmInvoiceId</Name>
+				<Source><![CDATA[
+    [DataMember("invoiceId")]
+    public InvoiceId parmInvoiceId(InvoiceId _invoiceId = invoiceId)
+    {
+        invoiceId = _invoiceId;
+        return invoiceId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDueDate</Name>
+				<Source><![CDATA[
+    [DataMember("DueDate")]
+    public DueDate parmDueDate(DueDate _dueDate = dueDate)
+    {
+        dueDate = _dueDate;
+        return dueDate;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPaymTermId</Name>
+				<Source><![CDATA[
+    [DataMember("Payment")]
+    public PaymTermId parmPaymTermId(PaymTermId _paymTermId = paymTermId)
+    {
+        paymTermId = _paymTermId;
+        return paymTermId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmTaxItemGroup</Name>
+				<Source><![CDATA[
+    [DataMember("ItemSalesTaxGroup")]
+    public TaxItemGroup parmTaxItemGroup(TaxItemGroup _itemSalesTaxGroup = itemSalesTaxGroup)
+    {
+        itemSalesTaxGroup = _itemSalesTaxGroup;
+        return itemSalesTaxGroup;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmTaxGroupJournal</Name>
+				<Source><![CDATA[
+    [DataMember("SalesTaxGroup")]
+    public TaxGroupJournal parmTaxGroupJournal(TaxGroupJournal _salesTaxGroup = salesTaxGroup)
+    {
+        salesTaxGroup = _salesTaxGroup;
+        return salesTaxGroup;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

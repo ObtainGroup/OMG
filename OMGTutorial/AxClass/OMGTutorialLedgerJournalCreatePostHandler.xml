@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGTutorialLedgerJournalCreatePostHandler</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class OMGTutorialLedgerJournalCreatePostHandler implements OMGIInboundMessageHandler
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>getDescription</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Description of the handler
+    /// </summary>
+    /// <returns>Description</returns>
+    public static Description getDescription()
+    {
+        return 'General Ledger Journal Create and Post';
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateMessageTypeParameters</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates the message type parameters
+    /// </summary>
+    /// <param name = "_messageType">Message Type</param>
+    /// <returns>true</returns>
+    public boolean validateMessageTypeParameters(OMGMessageTypeTable _messageType)
+    {
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>processMessage</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Processes the message (creates and posts the journal)
+    /// </summary>
+    /// <param name = "_message">Inbound message</param>
+    /// <returns>Response contract</returns>
+    public OMGInboundMessageResponseContract processMessage(OMGInboundMessageTable  _inboundMessageTable)
+    {
+        OMGInboundMessageResponseContract           response = new OMGInboundMessageResponseContract();
+        OMGTutorialLedgerJournalHeaderDataContract  headerContract;
+        ;
+                       
+        try
+        {
+            headerContract = FormJsonSerializer::deserializeObject(classNum(OMGTutorialLedgerJournalHeaderDataContract), _inboundMessageTable.Message);
+
+            ttsbegin;
+
+            changecompany(headerContract.parmDataAreaId())
+            {
+                if (this.validateJournal(headerContract.parmLedgerJournalNameId()))
+                {
+                    LedgerJournalTable ledgerJournalTable;
+
+                    if (this.createJournal(headerContract, ledgerJournalTable))
+                    {
+                        if (this.postJournal(ledgerJournalTable))
+                        {
+                            response.parmProcessedOk(true);
+                            response.parmProcessingStatus(OMGProcessingStatus::Processed);
+                            response.parmResponse(strFmt('Journal %1 posted successfully',ledgerJournalTable.JournalNum));
+                        }
+                        else
+                        {
+                            response.parmProcessedOk(false);
+                            response.parmProcessingStatus(OMGProcessingStatus::Error);
+                            response.parmResponse('Error posting journal');
+                        }
+                    }
+                    else
+                    {
+                        response.parmProcessedOk(false);
+                        response.parmProcessingStatus(OMGProcessingStatus::Error);
+                        response.parmResponse('Error creating journal');
+                    }
+                }
+                else
+                {
+                    response.parmProcessedOk(false);
+                    response.parmProcessingStatus(OMGProcessingStatus::Error);
+                    response.parmResponse('Error validating journal');
+                }
+            }
+
+            if (response.parmProcessedOk())
+            {
+                ttscommit;
+            }
+            else
+            {
+                ttsabort;
+            }
+        }
+        catch (Exception::CLRError)
+        {
+            response.parmProcessed(false);
+            response.parmProcessedOk(false);
+            response.parmProcessingStatus(OMGProcessingStatus::Error);
+            response.parmResponse(AifUtil::getClrErrorMessage());
+        }
+        
+        return response;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>validateJournal</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Validates the journal name
+    /// </summary>
+    /// <param name = "_journalHeader">JournalHeader</param>
+    /// <returns>true if journal name is found, otherwise false</returns>
+    
+    protected boolean validateJournal(LedgerJournalNameId   _journalNameId)
+    {
+        if (LedgerJournalName::exist(_journalNameId) == false)
+        {
+            Error(strFmt('Journal name %1 does not exist', _journalNameId));
+            return false;
+        }
+
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createJournal</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Creates the journal header
+    /// </summary>
+    /// <param name = "_journalHeader">JournalHeader object (serialized .net)</param>
+    /// <param name = "_journalTable">LedgerJournalTable as OUT buffer</param>
+    /// <returns>true, if created OK</returns>
+    
+    protected boolean createJournal(OMGTutorialLedgerJournalHeaderDataContract  _headerContract, 
+                                    LedgerJournalTable                          _journalTable)
+    {
+        _journalTable.clear();
+        _journalTable.initValue();
+        _journalTable.JournalName   = _headerContract.parmLedgerJournalNameId();
+        _journalTable.initFromLedgerJournalName();
+        
+        _journalTable.JournalNum    = JournalTableData::newTable(_journalTable).nextJournalId();
+        _journalTable.Name          = _headerContract.parmName();
+
+        if (_journalTable.validateWrite())
+        {
+            _journalTable.insert();
+
+            return this.createJournalLines(_headerContract.parmLines(), _journalTable);
+        }
+
+        return false;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>accountType</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Converts the account type from string to enum
+    /// </summary>
+    /// <param name = "_accTypeStr">account type as string</param>
+    /// <returns>Account type enum</returns>
+    protected LedgerJournalACType accountType(str _accTypeStr)
+    {
+        switch (_accTypeStr)
+        {
+            case 'Ledger':
+                return LedgerJournalACType::Ledger;
+            case 'Cust':
+                return LedgerJournalACType::Cust;
+            case 'Vend':
+                return LedgerJournalACType::Vend;
+            case 'Proj':
+                return LedgerJournalACType::Project;
+            default:
+                throw error(strFmt('Account type %1 not supported', _accTypeStr));
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createJournalLines</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Creates the journal lines in the .net header object
+    /// </summary>
+    /// <param name = "_journalHeader">.net header object</param>
+    /// <param name = "_journalTable">LedgderJournalTable buffer</param>
+    /// <returns>true if created OK</returns>    
+    protected boolean createJournalLines(List               _journalLineList, 
+                                         LedgerJournalTable _journalTable)
+    {        
+        LedgerJournalTrans                          ledgerJournalTrans;
+        OMGTutorialLedgerJournalLineDataContract    lineDataContract;
+        
+        RecordInsertList    lineInsertList      = new RecordInsertList(tableNum(LedgerJournalTrans));
+        LedgerJournalEngine ledgerJournalEngine = LedgerJournalEngine::construct(_journalTable.JournalType);
+        ListEnumerator      lineListEnumerator  = _journalLineList.getEnumerator();
+        Counter             counter             = 1;        
+        ;
+        
+        ledgerJournalEngine.newJournalActive(_journalTable);
+        
+        while (lineListEnumerator.moveNext())
+        {
+            lineDataContract = lineListEnumerator.current();
+            ledgerJournalTrans.clear();
+            ledgerJournalTrans.initValue();
+           
+            ledgerJournalEngine.initValue(ledgerJournalTrans);
+
+            ledgerJournalTrans.JournalNum = _journalTable.JournalNum;
+            ledgerJournalTrans.LineNum = counter;
+
+            ledgerJournalTrans.TransDate = lineDataContract.parmTransDate();
+            //ledgerJournalTrans.AccountType = this.accountType(lineDataContract.parmAccounType());
+            ledgerJournalTrans.AccountType = lineDataContract.parmAccounType();
+
+            switch (ledgerJournalTrans.AccountType)
+            {
+                case LedgerJournalACType::Ledger:
+// TODO Fix                    
+//ledgerJournalTrans.LedgerDimension = LedgerAccountDimensionResolver::newResolver(lineDataContract.parmAccountDisplayValue()).resolve();
+                    break;
+                case LedgerJournalACType::Cust:
+                case LedgerJournalACType::Vend:
+                case LedgerJournalACType::Project:
+                    // TODO Fix
+//ledgerJournalTrans.LedgerDimension = LedgerDynamicAccountHelper::getDynamicAccountFromAccountNumber(lineDataContract.parmAccountDisplayValue(), ledgerJournalTrans.AccountType);
+                    break;
+            }
+
+            ledgerJournalTrans.CurrencyCode     = lineDataContract.parmCurrencyCode();
+            //ledgerJournalTrans.CurrncyModified(ledgerJournalTrans);
+            ledgerJournalTrans.AmountCurDebit   = lineDataContract.parmDebitAmount();
+            ledgerJournalTrans.AmountCurCredit  = lineDataContract.parmCreditAmount();
+            ledgerJournalTrans.Invoice          = lineDataContract.parmInvoiceId();
+            ledgerJournalTrans.Due              = lineDataContract.parmDueDate();
+            ledgerJournalTrans.Txt              = lineDataContract.parmTxt();
+            ledgerJournalTrans.Payment          = lineDataContract.parmPaymTermId();
+            ledgerJournalTrans.TaxItemGroup     = lineDataContract.parmTaxItemGroup();
+            ledgerJournalTrans.TaxGroup         = lineDataContract.parmTaxGroupJournal();
+
+            ledgerJournalTrans.defaultRow();
+
+            if (ledgerJournalTrans.validateWrite())
+            {
+                lineInsertList.add(ledgerJournalTrans);
+            }
+            else
+            {
+                lineInsertList = null;
+                return false;
+            }
+
+            ledgerJournalEngine.write(ledgerJournalTrans);
+
+            counter++;
+        }
+
+        lineInsertList.insertDatabase();
+
+        return true;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>postJournal</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Post the journal
+    /// </summary>
+    /// <param name = "_ledgerJournalTable">LedgerJournalTable</param>
+    /// <returns>true if posted ok, otherwise false</returns>
+    protected boolean postJournal(LedgerJournalTable _ledgerJournalTable)
+    {
+        return true;    // TODO Fix
+        LedgerJournalCheckPost journalCheckPost = LedgerJournalCheckPost::newLedgerJournalTable(_ledgerJournalTable, NoYes::Yes, NoYes::No);
+    
+        journalCheckPost.runOperation();
+
+        _ledgerJournalTable.reread();
+
+        return _ledgerJournalTable.Posted == NoYes::Yes;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>sampleMessage</Name>
+				<Source><![CDATA[
+    private void sampleMessage()
+    {
+        /*
+        {
+          "dataAreaId": "02SE",
+          "journalName": "AX2012",
+          "description": "AX2012, 9400008956, 0",
+          "lines": [
+            {
+              "text": "9400008956",
+              "transDate": "2024-10-17",
+              "debitAmount": "0",
+              "accountDisplayValue": "12002990",
+              "accountType": "Cust",
+              "creditAmount": "56350.04",
+              "currencyCode": "USD",
+              "invoice": "2018008955",
+              "dueDate": "2024-12-16",
+              "payment": "30"
+            },
+            {
+              "text": "9400008956",
+              "transDate": "2024-10-17",
+              "debitAmount": "0",
+              "accountDisplayValue": "3014-290-29999------",
+              "accountType": "Ledger",
+              "creditAmount": "40805.2",
+              "currencyCode": "USD",
+              "itemSalesTaxGroup": "GN",
+              "salesTaxGroup": "NLEUOUT",
+              "invoice": "2018008955"
+            },
+            {
+              "text": "9400008956",
+              "transDate": "2024-10-17",
+              "debitAmount": "97155.24",
+              "accountDisplayValue": "3014-290-29999------",
+              "accountType": "Ledger",
+              "creditAmount": "0",
+              "currencyCode": "USD",
+              "itemSalesTaxGroup": "GN",
+              "salesTaxGroup": "NLEUOUT",
+              "invoice": "2018008955"
+            }
+          ]
+        }
+        */
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>
