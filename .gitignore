@@ -1,1 +1,26 @@
-INTERNAL-*.md
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+# Folders
+/**/[Bb]in/*
+/**/XppMetadata
+/**/[Rr]esources/
+/**/[Rr]eports/
+/**/WebContent
+/**/XppSource/*
+
+# Build result files
+/**/BuildModelResult.log
+/**/BuildModelResult.xml
+/**/CompileLabels.xml
+
+# Visual studio artifacts
+/**/.vs
+
+# Project specific files
+isv.lnk
+
+/**/BuildModelResult.*
+/**/BuildProjectResult.*
+
