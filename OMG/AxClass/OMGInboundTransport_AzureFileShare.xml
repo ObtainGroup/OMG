@@ -230,6 +230,7 @@ class OMGInboundTransport_AzureFileShare extends OMGInboundTransport
                                                                                newGuid(),
                                                                                sourceDateTimeValue.get_DateTime());
             
+            this.insertMetadata(_shareFileClient, inboundMessageTable);
                         
             azureFileShareReader.postImportAction(dataContract, _shareFileClient);
             
@@ -259,6 +260,32 @@ class OMGInboundTransport_AzureFileShare extends OMGInboundTransport
     public static Description description()
     {
         return "@OMG:ImportFilesFromAzureFileShare";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>insertMetadata</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Gets the enumerator for the metadata and creates records in the inbound message metadata table
+    /// </summary>
+    /// <param name = "_shareFileClient">The ShareFileClient to read the metadata from</param>
+    /// <param name = "_inboundMessageTable">The inbound message table to create metadata records in</param>
+    protected void insertMetadata(ShareFileClient          _shareFileClient, 
+                                  OMGInboundMessageTable   _inboundMessageTable)
+    {
+        ShareFileProperties properties = _shareFileClient.GetProperties(null, CancellationToken::None);
+
+        // Get the metadata dictionary
+        var metadata = properties.Metadata;
+
+        if (metadata != null && metadata.Count > 0)
+        {
+            System.Collections.IEnumerator enumerator = metadata.GetEnumerator();
+
+            OMGInboundMessageMetadata::createMetadata(_inboundMessageTable.MessageGUID, enumerator);                           
+        }
     }
 
 ]]></Source>

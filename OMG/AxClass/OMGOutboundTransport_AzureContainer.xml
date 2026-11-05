@@ -93,7 +93,7 @@ class OMGOutboundTransport_AzureContainer extends OMGOutboundTransport
 
             using(System.IO.MemoryStream memoryStream = new System.IO.MemoryStream(byteArray))
             {                
-                azureContainerWriter.writeStorageContainer(memoryStream, filename, targetContainer);
+                azureContainerWriter.writeStorageContainer(memoryStream, filename, targetContainer, _outboundMessageTable);
                 ret = true;
             }                
         }

@@ -172,8 +172,9 @@ class OMGInboundTransport_AzureContainer extends OMGInboundTransport
                                                                                OMGMessageTypeTable::find(_messageTypeId).Company, 
                                                                                newGuid(), 
                                                                                _modifiedValue.get_DateTime());
-            
-            
+                        
+            this.insertMetadata(_blobClient, inboundMessageTable);
+                                
             // Handles the post import action (Archive/Delete/NoAction)            
             azureContainerReader.postImportAction(dataContract, _blobClient);
             
@@ -206,8 +207,7 @@ class OMGInboundTransport_AzureContainer extends OMGInboundTransport
                                         DMFCodePage     _codePage = '850')
     {
         System.IO.StreamReader      streamReader;
-        System.String               line;                
-        ;
+        System.String               line; 
         
         if (dataContract.parmBase64Encode())
         {   
@@ -248,6 +248,31 @@ class OMGInboundTransport_AzureContainer extends OMGInboundTransport
     public static Description description()
     {
         return "@OMG:ImportFilesFromAzureContainers";
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>insertMetadata</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Gets the enumerator for the metadata and creates records in the inbound message metadata table
+    /// </summary>
+    /// <param name = "_blobClient">The BlobClient to read the metadata from</param>
+    /// <param name = "_inboundMessageTable">The inbound message table to create metadata records in</param>
+    protected void insertMetadata(BlobClient               _blobClient, 
+                                  OMGInboundMessageTable   _inboundMessageTable)
+    {        
+        var                         response        = _blobClient.GetProperties(null, CancellationToken::None);
+        BlobProperties              blobProperties  = response.value;
+        var                         metadata        = blobProperties.Metadata;
+
+        if (metadata != null && metadata.Count > 0)
+        { 
+            System.Collections.IEnumerator enumerator = metadata.GetEnumerator();
+
+            OMGInboundMessageMetadata::createMetadata(_inboundMessageTable.MessageGUID, enumerator);            
+        }
     }
 
 ]]></Source>

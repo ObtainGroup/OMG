@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundMessage</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public class OMGOutboundMessage
+{
+    public OMGOutboundMessageTable outboundMessageTable;
+    public Map metadata = new Map(Types::String, Types::String);
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    public void new()
+    {
+        outboundMessageTable.MessageGUID = newGuid();
+        outboundMessageTable.SourceDateTime = DateTimeUtil::getSystemDateTime();
+        outboundMessageTable.MessageStatus = OMGProcessingStatus::Ready;
+        outboundMessageTable.SourceCompany = curext();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMetadata</Name>
+				<Source><![CDATA[
+    public Map parmMetadata(Map _metadata = metadata)
+    {
+        metadata = _metadata;
+        return metadata;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>send</Name>
+				<Source><![CDATA[
+    public void send()
+    {
+        outboundMessageTable.insert();
+        outboundMessageTable.addMetadata(metadata);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMessageTypeId</Name>
+				<Source><![CDATA[
+    public OMGMessageTypeId parmMessageTypeId(OMGMessageTypeId _messageTypeId = outboundMessageTable.MessageTypeId)
+    {
+        outboundMessageTable.MessageTypeId = _messageTypeId;
+
+        return outboundMessageTable.MessageTypeId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMessageGUID</Name>
+				<Source><![CDATA[
+    public OMGMessageGUID parmMessageGUID(OMGMessageGUID _messageGUID = outboundMessageTable.MessageGUID)
+    {
+        outboundMessageTable.MessageGUID = _messageGUID;
+
+        return outboundMessageTable.MessageGUID;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMessageName</Name>
+				<Source><![CDATA[
+    public OMGMessageName parmMessageName(OMGMessageName _messageName = outboundMessageTable.MessageName)
+    {
+        outboundMessageTable.MessageName = _messageName;
+
+        return outboundMessageTable.MessageName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMessage</Name>
+				<Source><![CDATA[
+    public OMGMessage parmMessage(OMGMessage _message = outboundMessageTable.Message)
+    {
+        outboundMessageTable.Message = _message;
+
+        return outboundMessageTable.Message;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmSourceCompany</Name>
+				<Source><![CDATA[
+    public DataAreaId parmSourceCompany(DataAreaId _sourceCompany = outboundMessageTable.SourceCompany)
+    {
+        outboundMessageTable.SourceCompany = _sourceCompany;
+
+        return outboundMessageTable.SourceCompany;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmSourceDateTime</Name>
+				<Source><![CDATA[
+    public OMGSourceDateTime parmSourceDateTime(OMGSourceDateTime _sourceDateTime = outboundMessageTable.SourceDateTime)
+    {
+        outboundMessageTable.SourceDateTime = _sourceDateTime;
+
+        return outboundMessageTable.SourceDateTime;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMessageStatus</Name>
+				<Source><![CDATA[
+    public OMGProcessingStatus parmMessageStatus(OMGProcessingStatus _messageStatus = outboundMessageTable.MessageStatus)
+    {
+        outboundMessageTable.MessageStatus = _messageStatus;
+
+        return outboundMessageTable.MessageStatus;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMessageErrorLog</Name>
+				<Source><![CDATA[
+    public OMGMessageErrorLog parmMessageErrorLog(OMGMessageErrorLog _messageErrorLog = outboundMessageTable.MessageErrorLog)
+    {
+        outboundMessageTable.MessageErrorLog = _messageErrorLog;
+
+        return outboundMessageTable.MessageErrorLog;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmBase64Encoded</Name>
+				<Source><![CDATA[
+    public OMGBase64Encoded parmBase64Encoded(OMGBase64Encoded _base64Encoded = outboundMessageTable.Base64Encoded)
+    {
+        outboundMessageTable.Base64Encoded = _base64Encoded;
+
+        return outboundMessageTable.Base64Encoded;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmTargetDirectory</Name>
+				<Source><![CDATA[
+    public OMGTargetDirectory parmTargetDirectory(OMGTargetDirectory _targetDirectory = outboundMessageTable.TargetDirectory)
+    {
+        outboundMessageTable.TargetDirectory = _targetDirectory;
+
+        return outboundMessageTable.TargetDirectory;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmFilenameType</Name>
+				<Source><![CDATA[
+    public FilenameType parmFilenameType(FilenameType _filenameType = outboundMessageTable.FilenameType)
+    {
+        outboundMessageTable.FilenameType = _filenameType;
+
+        return outboundMessageTable.FilenameType;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

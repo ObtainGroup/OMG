@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxTable xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGInboundMessageMetadata</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using System.Collections;
+
+public class OMGInboundMessageMetadata extends common
+{
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>createMetadata</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Pupulates the OMGInboundMessageMetadata table with the metadata key-value pairs from the enumerator.
+    /// </summary>
+    /// <param name = "_messageGUID">The message GUID</param>
+    /// <param name = "_enumerator">The enumerator containing the metadata key-value pairs</param>
+    public static void createMetadata(OMGMessageGUID                    _messageGUID,
+                                      System.Collections.IEnumerator    _enumerator)                                      
+    {
+        OMGInboundMessageMetadata   messageMetadata;    
+        OMGMetadataKey              metadataKey;
+        OMGMetadataValue            metadataValue;
+
+        while (_enumerator.MoveNext())
+        {
+            System.Object currentPair = _enumerator.Current;
+    
+            // Use .NET Reflection to bypass strict X++ compile-time property checks
+            System.Type type = currentPair.GetType();
+    
+            metadataKey   = type.GetProperty('Key').GetValue(currentPair);
+            metadataValue = type.GetProperty('Value').GetValue(currentPair);
+    
+            if (!OMGInboundMessageMetadata::exist(_messageGUID, metadataKey))
+            {
+                messageMetadata.clear();
+                messageMetadata.initValue();
+                messageMetadata.MessageGUID     = _messageGUID;
+                messageMetadata.MetadataKey     = metadataKey;
+                messageMetadata.MetadataValue   = metadataValue;
+                messageMetadata.insert();
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>exist</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Checks if a metadata key exists for a given message GUID.
+    /// </summary>
+    /// <param name = "_messageGUID">The message GUID</param>
+    /// <param name = "_metadataKey">The metadata key</param>
+    /// <returns>True if the metadata key exists for the given message GUID, otherwise false</returns>
+    public static boolean exist(OMGMessageGUID _messageGUID, 
+                                OMGMetadataKey _metadataKey)
+    {                        
+        return _messageGUID && _metadataKey &&
+                    (select firstonly RecId from OMGInboundMessageMetadata
+                        where OMGInboundMessageMetadata.MessageGUID == _messageGUID   &&
+                              OMGInboundMessageMetadata.MetadataKey == _metadataKey).RecId != 0;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>find</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Finds a specific OMGInboundMessageMetadata record based on the message GUID and metadata key.
+    /// </summary>
+    /// <param name = "_messageGUID">The message GUID</param>
+    /// <param name = "_metadataKey">The metadata key</param>
+    /// <param name = "_forUpdate">Should the record be selected for update?</param>
+    /// <returns>The found OMGInboundMessageMetadata record</returns>
+    public static OMGInboundMessageMetadata find(OMGMessageGUID _messageGUID, 
+                                                 OMGMetadataKey _metadataKey,
+                                                 boolean        _forUpdate = false)
+    {
+        OMGInboundMessageMetadata messageMetadata;
+    
+        messageMetadata.selectForUpdate(_forUpdate);
+
+        if (_messageGUID && _metadataKey)
+        {
+            select firstonly messageMetadata
+                where messageMetadata.MessageGUID == _messageGUID &&
+                      messageMetadata.MetadataKey == _metadataKey;
+        }
+        return messageMetadata;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+	<DeveloperDocumentation>@OMG:InboundMessageMetadataDevDoc</DeveloperDocumentation>
+	<Label>@OMG:InboundMetadata</Label>
+	<SubscriberAccessLevel>
+		<Read>Allow</Read>
+	</SubscriberAccessLevel>
+	<TableGroup>WorksheetLine</TableGroup>
+	<TitleField1>MetadataKey</TitleField1>
+	<TitleField2>MetadataValue</TitleField2>
+	<AllowRowVersionChangeTracking>Yes</AllowRowVersionChangeTracking>
+	<ClusteredIndex>MessageGUIDMetadataKeyIdx</ClusteredIndex>
+	<CreatedBy>Yes</CreatedBy>
+	<CreatedDateTime>Yes</CreatedDateTime>
+	<ModifiedBy>Yes</ModifiedBy>
+	<ModifiedDateTime>Yes</ModifiedDateTime>
+	<PrimaryIndex>MessageGUIDMetadataKeyIdx</PrimaryIndex>
+	<ReplacementKey>MessageGUIDMetadataKeyIdx</ReplacementKey>
+	<SaveDataPerCompany>No</SaveDataPerCompany>
+	<DeleteActions />
+	<FieldGroups>
+		<AxTableFieldGroup>
+			<Name>AutoReport</Name>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>MessageGUID</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MetadataKey</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MetadataValue</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoLookup</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoIdentification</Name>
+			<AutoPopulate>Yes</AutoPopulate>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>MessageGUID</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MetadataKey</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoSummary</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AutoBrowse</Name>
+			<Fields />
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>Identification</Name>
+			<Label>@SYS104938</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>MessageGUID</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MetadataKey</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>All</Name>
+			<Label>@SYS11696</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>MessageGUID</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MetadataKey</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>MetadataValue</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+	</FieldGroups>
+	<Fields>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldGuid">
+			<Name>MessageGUID</Name>
+			<AllowEdit>No</AllowEdit>
+			<ExtendedDataType>OMGMessageGUID</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>MetadataKey</Name>
+			<AllowEdit>No</AllowEdit>
+			<ExtendedDataType>OMGMetadataKey</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Mandatory>Yes</Mandatory>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldString">
+			<Name>MetadataValue</Name>
+			<ExtendedDataType>OMGMetadataValue</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+	</Fields>
+	<FullTextIndexes />
+	<Indexes>
+		<AxTableIndex>
+			<Name>MessageGUIDMetadataKeyIdx</Name>
+			<AlternateKey>Yes</AlternateKey>
+			<Fields>
+				<AxTableIndexField>
+					<DataField>MessageGUID</DataField>
+				</AxTableIndexField>
+				<AxTableIndexField>
+					<DataField>MetadataKey</DataField>
+				</AxTableIndexField>
+			</Fields>
+		</AxTableIndex>
+	</Indexes>
+	<Mappings />
+	<Relations>
+		<AxTableRelation>
+			<Name>OMGInboundMessageTable</Name>
+			<Cardinality>ZeroMore</Cardinality>
+			<OnDelete>Cascade</OnDelete>
+			<RelatedTable>OMGInboundMessageTable</RelatedTable>
+			<RelatedTableCardinality>ExactlyOne</RelatedTableCardinality>
+			<RelationshipType>Association</RelationshipType>
+			<Constraints>
+				<AxTableRelationConstraint xmlns=""
+					i:type="AxTableRelationConstraintField">
+					<Name>MessageGUID</Name>
+					<Field>MessageGUID</Field>
+					<RelatedField>MessageGUID</RelatedField>
+				</AxTableRelationConstraint>
+			</Constraints>
+		</AxTableRelation>
+	</Relations>
+	<StateMachines />
+</AxTable>

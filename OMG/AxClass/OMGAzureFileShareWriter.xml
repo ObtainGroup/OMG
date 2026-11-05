@@ -12,10 +12,10 @@ using System.Threading;
 /// <summary>
 /// Class for writing files on an Azure file share
 /// </summary>
-class OMGAzureFileShareWriter extends omgazurefileShare
+class OMGAzureFileShareWriter extends OMGAzureFileShare
 {
-    OMGOutboundDataContract_AzureFileShare  dataContract;
-    
+    OMGOutboundDataContract_AzureFileShare                                  dataContract;    
+
 }
 ]]></Declaration>
 		<Methods>
@@ -28,10 +28,12 @@ class OMGAzureFileShareWriter extends omgazurefileShare
     /// <param name = "_stream">The stream to write</param>
     /// <param name = "_filename">The name of the file to create from the stream</param>
     /// <param name = "_targetDirectory">The directory to write the file in</param>
+    /// <param name = "_outboundMessageTable">The outbound message table</param>
     /// <returns>True if the file was written to the target</returns>
-    public boolean writeFile(System.IO.Stream   _stream,
-                             Filename           _filename,
-                             filename           _targetDirectory)
+    public boolean writeFile(System.IO.Stream           _stream,
+                             Filename                   _filename,
+                             filename                   _targetDirectory,
+                             OMGOutboundMessageTable    _outboundMessageTable)
     {
         ShareClient             share   = new ShareClient(KeyVaultCertificateHelper::getManualSecretValue(keyVaultCertificateRef), dataContract.parmFileShareName());
         ShareDirectoryClient    targetDirectoryClient;
@@ -61,9 +63,11 @@ class OMGAzureFileShareWriter extends omgazurefileShare
                 fileClient = targetDirectoryClient.GetFileClient(_filename);
                 
                 if (fileClient.Exists(CancellationToken::None))
-                {
-                    // Upload from the local file to the file share in azure.                    
+                {                                                            
+                    System.Object object = OMGOutboundMessageTable::buildFileMetadata(_outboundMessageTable);
+
                     fileClient.Create(_stream.get_Length(), null, null, null, null, null, CancellationToken::None);
+                    fileClient.SetMetadata(object, CancellationToken::None);                    
                     fileClient.Upload(_stream, null, CancellationToken::None);
                 }                
             }

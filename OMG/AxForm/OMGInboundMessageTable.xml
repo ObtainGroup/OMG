@@ -128,6 +128,38 @@ public class OMGInboundMessageTable extends FormRun
 			<DataSourceLinks />
 			<DerivedDataSources />
 		</AxFormDataSource>
+		<AxFormDataSource xmlns="">
+			<Name>OMGInboundMessageMetadata</Name>
+			<Table>OMGInboundMessageMetadata</Table>
+			<Fields>
+				<AxFormDataSourceField>
+					<DataField>DataAreaId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>MessageGUID</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>MetadataKey</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>MetadataValue</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>Partition</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>RecId</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>TableId</DataField>
+				</AxFormDataSourceField>
+			</Fields>
+			<ReferencedDataSources />
+			<JoinSource>OMGInboundMessageTable</JoinSource>
+			<InsertIfEmpty>No</InsertIfEmpty>
+			<DataSourceLinks />
+			<DerivedDataSources />
+		</AxFormDataSource>
 	</DataSources>
 	<Design>
 		<Caption xmlns="">@DMF:DMFRecurringInboundMessages</Caption>
@@ -381,6 +413,46 @@ public class OMGInboundMessageTable extends FormRun
 							</AxFormControl>
 						</Controls>
 						<Caption>@OMG:Message</Caption>
+					</AxFormControl>
+					<AxFormControl xmlns=""
+						i:type="AxFormTabPageControl">
+						<Name>Metadata</Name>
+						<Pattern>ToolbarList</Pattern>
+						<PatternVersion>1.2</PatternVersion>
+						<Type>TabPage</Type>
+						<FormControlExtension
+							i:nil="true" />
+						<Controls>
+							<AxFormControl xmlns=""
+								i:type="AxFormGridControl">
+								<Name>MetadataGrid</Name>
+								<Type>Grid</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<Controls>
+									<AxFormControl xmlns=""
+										i:type="AxFormStringControl">
+										<Name>OMGInboundMessageMetadata_MetadataKey</Name>
+										<Type>String</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<DataField>MetadataKey</DataField>
+										<DataSource>OMGInboundMessageMetadata</DataSource>
+									</AxFormControl>
+									<AxFormControl xmlns=""
+										i:type="AxFormStringControl">
+										<Name>OMGInboundMessageMetadata_MetadataValue</Name>
+										<Type>String</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<DataField>MetadataValue</DataField>
+										<DataSource>OMGInboundMessageMetadata</DataSource>
+									</AxFormControl>
+								</Controls>
+								<DataSource>OMGInboundMessageMetadata</DataSource>
+							</AxFormControl>
+						</Controls>
+						<Caption>@OMG:Metadata</Caption>
 					</AxFormControl>
 					<AxFormControl xmlns=""
 						i:type="AxFormTabPageControl">

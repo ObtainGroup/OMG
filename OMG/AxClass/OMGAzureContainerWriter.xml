@@ -104,16 +104,21 @@ class OMGAzureContainerWriter
     /// <param name = "_stream">The file as a stream</param>
     /// <param name = "_fileName">The file name</param>
     /// <param name = "_targetContainer">The target container to write the file to</param>
+    /// <param name = "_outboundMessageTable">The outbound message table</param>
     public void writeStorageContainer(System.IO.Stream          _stream,
                                       str                       _fileName,
-                                      OMGAzureTargetContainer   _targetContainer)
+                                      OMGAzureTargetContainer   _targetContainer,
+                                      OMGOutboundMessageTable   _outboundMessageTable)
     {
         BlobServiceClient           blobServiceClient       = new BlobServiceClient(this.parmConnectionStr());
         BlobContainerClient         blobContainerClient     = blobServiceClient.GetBlobContainerClient(_targetContainer);        
         BlobClient                  blobClient              = blobContainerClient.GetBlobClient(_fileName);
         ;
         
-        blobClient.upload(_stream);
+        System.Object object = OMGOutboundMessageTable::buildFileMetadata(_outboundMessageTable);
+                 
+        blobClient.upload(_stream, true, CancellationToken::None);
+        blobClient.SetMetadata(object, null, CancellationToken::None);        
     }
 
 ]]></Source>

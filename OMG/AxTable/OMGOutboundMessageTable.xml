@@ -255,6 +255,73 @@ public class OMGOutboundMessageTable extends common
 
 ]]></Source>
 			</Method>
+			<Method>
+				<Name>addMetadata</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Adds metadata to the outbound message
+    /// </summary>    
+    /// <param name = "_addDefault">Whether to add default metadata</param>
+    /// <param name = "_metadataMap">A map of metadata key-value pairs</param>
+    [Replaceable]
+    public void addMetadata(Map _metadataMap = null, boolean _addDefault = true)
+    {
+        MapEnumerator   mapEnumerator;
+
+        if (_addDefault)
+        {
+            if (_metadataMap == null)
+            {
+                _metadataMap = new Map(Types::String, Types::String);
+            }
+
+            _metadataMap.insert('DataAreaId', curExt()); 
+            _metadataMap.insert('MessageTypeId', this.MessageTypeId);
+            _metadataMap.insert('MessageGUID', guid2StrWithoutBraces(this.MessageGUID));
+            _metadataMap.insert('MessageCreated', DateTimeUtil::toStr(this.CreatedDateTime));
+            _metadataMap.insert('SourceEnvironment', Microsoft.Dynamics.ApplicationPlatform.Environment.EnvironmentFactory::GetApplicationEnvironment().Infrastructure.HostUrl);
+        }
+
+        if (_metadataMap != null)
+        {
+            mapEnumerator = _metadataMap.getEnumerator();
+            while (mapEnumerator.moveNext())
+            {
+                OMGOutboundMessageMetadata::createMetadata(this.MessageGUID, mapEnumerator.currentKey(), mapEnumerator.currentValue());
+            }
+        }        
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>buildFileMetadata</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Builds a dictionary of file metadata from the outbound message table
+    /// </summary>
+    /// <param name = "_outboundMessageTable">The outbound message table</param>
+    /// <returns>A dictionary of file metadata key-value pairs</returns>
+    public static System.Collections.Generic.Dictionary<System.String, System.String> buildFileMetadata(OMGOutboundMessageTable _outboundMessageTable)
+    {
+        OMGOutboundMessageMetadata                                              outboundMessageMetadata;
+        System.Collections.Generic.Dictionary<System.String, System.String>     fileMetadata;
+
+        while select outboundMessageMetadata
+            where outboundMessageMetadata.messageGUID == _outboundMessageTable.MessageGUID
+        {
+            if (!fileMetadata)
+            {
+                fileMetadata = new System.Collections.Generic.Dictionary<System.String, System.String>();
+            }
+            fileMetadata.Add(outboundMessageMetadata.MetadataKey, outboundMessageMetadata.MetadataValue);
+        }
+
+        return fileMetadata;
+    }
+
+]]></Source>
+			</Method>
 		</Methods>
 	</SourceCode>
 	<DeveloperDocumentation>@OMG:OMGOutboundMessageTableDevDoc</DeveloperDocumentation>

@@ -90,7 +90,7 @@ class OMGOutboundTransport_AzureFileShare extends OMGOutboundTransport
             
             using(System.IO.MemoryStream memoryStream = new System.IO.MemoryStream(byteArray))
             {
-                processedOk = azureFileShareWriter.writeFile(memoryStream, filename, strRem(_outboundMessageTable.TargetDirectory, '/') );                
+                processedOk = azureFileShareWriter.writeFile(memoryStream, filename, strRem(_outboundMessageTable.TargetDirectory, '/'), _outboundMessageTable);
             }
         }
         
