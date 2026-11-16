@@ -143,7 +143,7 @@ class OMGMessageProcessorDMF extends OMGInboundMessageHandler implements OMGIInb
 
             execution.update();
 
-            setPrefix(strFmt("@SYS73667", _inboundMessage.MessageName));
+            setPrefix(strFmt("@OMG:ProcessingMessage", _inboundMessage.MessageName));
 
             // Import the file via quick import DMF
             int ttsLevelDecreased = this.decreaseTTSLevel();

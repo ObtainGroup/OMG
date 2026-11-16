@@ -89,7 +89,7 @@ public class OMGOutboundMessageService
                 }
                 else
                 {
-                    Error("@Retail:UpdateConflictNotRecovered");
+                    Error("@OMG:UpdateConflictNotRecovered");
                 }
             }
             else

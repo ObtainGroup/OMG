@@ -47,5 +47,23 @@
 	        <Message>DataEntityFieldNameCheck: The data entity 'OMGOutboundMesssageTableEntity' has an array field 'Base64Encoded' which contains invaid characters in it's name. Please remove '_' or any other numeric value from the field.</Message>  
         	<Justification>By design</Justification>
       	</Diagnostic>
-  </Items>
-</IgnoreDiagnostics>
+      <Diagnostic>
+          <DiagnosticType>BestPractices</DiagnosticType>
+          <Severity>Warning</Severity>
+          <Path>dynamics://DataEntityView/OMGOutboundMessageDetailEntity/DataEntityViewMappedField/Base64Encoded</Path>
+          <ElementType>AxDataEntityView</ElementType>
+          <Moniker>DataEntityFieldNamePropertyCheck</Moniker>
+          <Message>DataEntityFieldNameCheck: The data entity 'OMGOutboundMessageDetailEntity' has an array field 'Base64Encoded' which contains invaid characters in it's name. Please remove '_' or any other numeric value from the field.</Message>
+          <Justification>Base64Encoded is a published field name describing the base64 encoding standard. Renaming it would break existing OData clients.</Justification>
+      </Diagnostic>
+      <Diagnostic>
+          <DiagnosticType>BestPractices</DiagnosticType>
+          <Severity>Warning</Severity>
+          <Path>dynamics://Class/OMGOutboundMessage/Method/new</Path>
+          <ElementType>AxClass</ElementType>
+          <Moniker>BPErrorClassNewNotProtected</Moniker>
+          <Message>BPErrorClassNewNotProtected: The constructor (i.e. the 'new' method) should be protected. In addition, private constructors are allowed on final classes.</Message>
+          <Justification>The public constructor is part of the outbound message API. Keeping it public preserves existing callers that instantiate messages directly.</Justification>
+      </Diagnostic>
+    </Items>
+  </IgnoreDiagnostics>

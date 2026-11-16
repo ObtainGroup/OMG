@@ -3,6 +3,9 @@
 	<Name>OMGTutorialInboundTransport</Name>
 	<SourceCode>
 		<Declaration><![CDATA[
+/// <summary>
+/// Demonstrates uploading and downloading a test file over FTP.
+/// </summary>
 class OMGTutorialInboundTransport extends OMGInboundTransport
 {
     Object                  dataContract;
@@ -28,14 +31,12 @@ class OMGTutorialInboundTransport extends OMGInboundTransport
 				<Source><![CDATA[
     public void doTransport(OMGInboundTransportContract _dataContract)
     {
-        // Place your transport logic here                
-        ;
 
         messageTypeTable    = OMGMessageTypeTable::find(_dataContract.parmMessageTypeId());
         dataContract        = FormJsonSerializer::deserializeObject(this.dataContractClass(), messageTypeTable.InboundSerializedParameterContract) as OMGTutorialInboundDataContract;
 
         credential          = new System.Net.NetworkCredential(dataContract.parmUserName() , dataContract.parmPassword());
-        ftpFileName         = dataContract.parmFtpServerAddress() + @"/" + "TestFile.txt";
+        ftpFileName         = dataContract.parmFtpServerAddress() + @"/" + 'TestFile.txt';
 
         this.uploadTestFile();
 
@@ -48,9 +49,13 @@ class OMGTutorialInboundTransport extends OMGInboundTransport
 			<Method>
 				<Name>description</Name>
 				<Source><![CDATA[
+    /// <summary>
+    /// Returns the transport description shown in message type setup.
+    /// </summary>
+    /// <returns>The tutorial transport description.</returns>
     public static Description description()
     {
-        return "Tutorial transport class";
+        return "@OMG:TutorialTransport";
     }
 
 ]]></Source>
@@ -58,6 +63,9 @@ class OMGTutorialInboundTransport extends OMGInboundTransport
 			<Method>
 				<Name>uploadTestFile</Name>
 				<Source><![CDATA[
+    /// <summary>
+    /// Uploads sample message content to the configured FTP test file.
+    /// </summary>
     public void uploadTestFile()
     {
         System.Net.FtpWebRequest            ftpRequest;
@@ -69,7 +77,6 @@ class OMGTutorialInboundTransport extends OMGInboundTransport
         System.Text.Encoding                getUTF8;
         System.IO.Stream                    requestStream;
         System.IO.Stream                    fileStream = this.createStream();
-        ;
         
         request         = System.Net.WebRequest::Create(new System.Uri(ftpFileName));
         ftpRequest      = request;
@@ -82,7 +89,7 @@ class OMGTutorialInboundTransport extends OMGInboundTransport
 
         ftpRequest.set_Credentials(credential);
         ftpRequest.set_ContentLength(bytes.get_Length());
-        ftpRequest.set_Method("STOR");
+        ftpRequest.set_Method('STOR');
  
         requestStream       = ftpRequest.GetRequestStream();
         requestStream.Write(bytes,0,bytes.get_Length());
@@ -96,11 +103,14 @@ class OMGTutorialInboundTransport extends OMGInboundTransport
 			<Method>
 				<Name>createStream</Name>
 				<Source><![CDATA[
+    /// <summary>
+    /// Creates a stream containing the first inbound message for the FTP example.
+    /// </summary>
+    /// <returns>The stream containing the sample message.</returns>
     public System.IO.Stream createStream()
     {        
         TextStreamIo                textStreamIo;
         OMGInboundMessageTable      inboundMessageTable;
-        ;
 
         select firstonly inboundMessageTable;
 
@@ -118,6 +128,9 @@ class OMGTutorialInboundTransport extends OMGInboundTransport
 			<Method>
 				<Name>downloadTestFile</Name>
 				<Source><![CDATA[
+    /// <summary>
+    /// Downloads and reads the configured FTP test file.
+    /// </summary>
     public void downloadTestFile()
     {               
         System.Net.FtpWebRequest        ftpRequest;
@@ -125,7 +138,6 @@ class OMGTutorialInboundTransport extends OMGInboundTransport
         System.IO.StreamReader          reader;        
         System.Net.FtpWebResponse       response;        
         str                             text;
-        ;
          
         try
         {
@@ -141,7 +153,7 @@ class OMGTutorialInboundTransport extends OMGInboundTransport
 
         catch
         {
-            error("Something went wrong");
+            error("@OMG:TutorialTransportError");
         }
         
     }

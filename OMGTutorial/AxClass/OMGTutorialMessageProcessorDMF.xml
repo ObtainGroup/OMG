@@ -3,6 +3,9 @@
 	<Name>OMGTutorialMessageProcessorDMF</Name>
 	<SourceCode>
 		<Declaration><![CDATA[
+/// <summary>
+/// Demonstrates creating a sales order and assigning it to DMF staging records.
+/// </summary>
 class OMGTutorialMessageProcessorDMF extends OMGMessageProcessorDMF
 {
     }
@@ -21,7 +24,6 @@ class OMGTutorialMessageProcessorDMF extends OMGMessageProcessorDMF
         SalesTable      salesTable;
         CustTable       custTable = CustTable::find('004003');
         NumberSeq       numberSeq;
-        ;
 
         ttsbegin;
 
@@ -60,12 +62,12 @@ class OMGTutorialMessageProcessorDMF extends OMGMessageProcessorDMF
 				<Name>postTargetProcessing</Name>
 				<Source><![CDATA[
     /// <summary>
-    ///
+    /// Invokes the base post-processing hook after importing the entity records.
     /// </summary>
-    /// <param name = "_definitionGroupName"></param>
-    /// <param name = "_executionId"></param>
-    /// <param name = "_entityName"></param>
-    /// <param name = "_inboundMessage"></param>
+    /// <param name = "_definitionGroupName">The DMF definition group.</param>
+    /// <param name = "_executionId">The import execution ID.</param>
+    /// <param name = "_entityName">The imported entity name.</param>
+    /// <param name = "_inboundMessage">The inbound message being processed.</param>
     public void postTargetProcessing(DMFDefinitionGroupName _definitionGroupName, DMFExecutionId _executionId, DMFEntityName _entityName, OMGInboundMessageTable _inboundMessage)
     {
         super(_definitionGroupName, _executionId, _entityName, _inboundMessage);
@@ -77,10 +79,10 @@ class OMGTutorialMessageProcessorDMF extends OMGMessageProcessorDMF
 				<Name>processMessage</Name>
 				<Source><![CDATA[
     /// <summary>
-    ///
+    /// Imports an inbound message through the base DMF processor.
     /// </summary>
-    /// <param name = "_inboundMessage"></param>
-    /// <returns></returns>
+    /// <param name = "_inboundMessage">The message containing the import data.</param>
+    /// <returns>The DMF import status and response details.</returns>
     public OMGInboundMessageResponseContract processMessage(OMGInboundMessageTable _inboundMessage)
     {
         OMGInboundMessageResponseContract ret;
@@ -96,12 +98,12 @@ class OMGTutorialMessageProcessorDMF extends OMGMessageProcessorDMF
 				<Name>processToTarget</Name>
 				<Source><![CDATA[
     /// <summary>
-    ///
+    /// Transfers the entity staging records to their target tables through DMF.
     /// </summary>
-    /// <param name = "_definitionGroupName"></param>
-    /// <param name = "_executionId"></param>
-    /// <param name = "_entityName"></param>
-    /// <param name = "_inboundMessage"></param>
+    /// <param name = "_definitionGroupName">The DMF definition group.</param>
+    /// <param name = "_executionId">The import execution ID.</param>
+    /// <param name = "_entityName">The entity to transfer to the target.</param>
+    /// <param name = "_inboundMessage">The inbound message being processed.</param>
     public void processToTarget(DMFDefinitionGroupName _definitionGroupName, DMFExecutionId _executionId, DMFEntityName _entityName, OMGInboundMessageTable _inboundMessage)
     {
         super(_definitionGroupName, _executionId, _entityName, _inboundMessage);

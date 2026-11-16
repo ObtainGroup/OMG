@@ -3,6 +3,9 @@
 	<Name>OMGTutorialMessageProcessor</Name>
 	<SourceCode>
 		<Declaration><![CDATA[
+/// <summary>
+/// Demonstrates returning a successful response from an inbound message handler.
+/// </summary>
 class OMGTutorialMessageProcessor extends OMGInboundMessageHandler implements OMGIInboundMessageHandler
 {
 }
@@ -12,10 +15,13 @@ class OMGTutorialMessageProcessor extends OMGInboundMessageHandler implements OM
 			<Method>
 				<Name>description</Name>
 				<Source><![CDATA[
+    /// <summary>
+    /// Returns the handler description shown in message type setup.
+    /// </summary>
+    /// <returns>The tutorial handler description.</returns>
     public static Description description()
     {
-        // Description shown in the dropdown on message type setup
-        return "My little POC class";
+        return "@OMG:TutorialMessageProcessor";
     }
 
 ]]></Source>
@@ -38,13 +44,12 @@ class OMGTutorialMessageProcessor extends OMGInboundMessageHandler implements OM
     public OMGInboundMessageResponseContract processMessage(OMGInboundMessageTable   _inboundMessage)
     {
         OMGInboundMessageResponseContract   responseContract = new OMGInboundMessageResponseContract();
-        ;
 
         // Place your custom processing logic here
 
         responseContract.parmProcessed(true);   // Indicates if we try to process the message
         responseContract.parmProcessedOk(true); // Indicates if the processing was sucessful
-        responseContract.parmResponse("The processing was ok"); // Place any response/error text here
+        responseContract.parmResponse("@OMG:TutorialProcessingSucceeded"); // Place any response/error text here
         responseContract.parmProcessingStatus(OMGProcessingStatus::Processed);  // Force a specific processing status
 
         return responseContract;

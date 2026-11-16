@@ -267,19 +267,24 @@ public class OMGOutboundMessageTable extends common
     public void addMetadata(Map _metadataMap = null, boolean _addDefault = true)
     {
         MapEnumerator   mapEnumerator;
+        RecordInsertList recordInsertList = new RecordInsertList(tableNum(OMGOutboundMessageMetadata));
 
         if (_addDefault)
         {
-            if (_metadataMap == null)
+            Map OMGmetadataMap = new Map(Types::String, Types::String);
+
+            OMGmetadataMap.insert('OMG-DataAreaId', curExt());
+            OMGmetadataMap.insert('OMG-MessageTypeId', this.MessageTypeId);
+            OMGmetadataMap.insert('OMG-MessageGUID', guid2StrWithoutBraces(this.MessageGUID));
+            OMGmetadataMap.insert('OMG-MessageCreated', DateTimeUtil::toStr(this.CreatedDateTime));
+            OMGmetadataMap.insert('OMG-SourceEnvironment', Microsoft.Dynamics.ApplicationPlatform.Environment.EnvironmentFactory::GetApplicationEnvironment().Infrastructure.HostUrl);
+
+            mapEnumerator = OMGmetadataMap.getEnumerator();
+            while (mapEnumerator.moveNext())
             {
-                _metadataMap = new Map(Types::String, Types::String);
+                OMGOutboundMessageMetadata::createMetadataRecordInsertList(recordInsertList, this.MessageGUID, mapEnumerator.currentKey(), mapEnumerator.currentValue(), true);
             }
 
-            _metadataMap.insert('DataAreaId', curExt()); 
-            _metadataMap.insert('MessageTypeId', this.MessageTypeId);
-            _metadataMap.insert('MessageGUID', guid2StrWithoutBraces(this.MessageGUID));
-            _metadataMap.insert('MessageCreated', DateTimeUtil::toStr(this.CreatedDateTime));
-            _metadataMap.insert('SourceEnvironment', Microsoft.Dynamics.ApplicationPlatform.Environment.EnvironmentFactory::GetApplicationEnvironment().Infrastructure.HostUrl);
         }
 
         if (_metadataMap != null)
@@ -287,9 +292,62 @@ public class OMGOutboundMessageTable extends common
             mapEnumerator = _metadataMap.getEnumerator();
             while (mapEnumerator.moveNext())
             {
-                OMGOutboundMessageMetadata::createMetadata(this.MessageGUID, mapEnumerator.currentKey(), mapEnumerator.currentValue());
+                OMGOutboundMessageMetadata::createMetadataRecordInsertList(recordInsertList, this.MessageGUID, mapEnumerator.currentKey(), mapEnumerator.currentValue());
             }
         }        
+
+        recordInsertList.insertDatabase();
+
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getMessageProperties</Name>
+				<Source><![CDATA[
+    public str getMessageProperties()
+    {
+        OMGOutboundMessageMetadata                                              outboundMessageMetadata;
+        System.Collections.Generic.Dictionary<System.String, System.String>     userDefinedMetadata;
+        Newtonsoft.Json.JsonSerializerSettings                                  serializerSettings;
+        str jsonString;
+
+        while select outboundMessageMetadata
+            where outboundMessageMetadata.messageGUID == this.MessageGUID
+               && outboundMessageMetadata.IsSystem == NoYes::No
+        {
+            if (!userDefinedMetadata)
+            {
+                userDefinedMetadata = new System.Collections.Generic.Dictionary<System.String, System.String>();
+            }
+
+            userDefinedMetadata.Add(outboundMessageMetadata.MetadataKey, outboundMessageMetadata.MetadataValue);
+        }
+
+        try
+        {
+            // after the loop over all metadata records
+            if (userDefinedMetadata && userDefinedMetadata.Count > 0)
+            {
+                // Escape non-ASCII characters (e.g. the Danish letter ae becomes \u00e6) so the JSON is pure ASCII.
+                // Azure Storage metadata is sent as HTTP headers and only accepts ASCII values.
+                serializerSettings = new Newtonsoft.Json.JsonSerializerSettings();
+                serializerSettings.StringEscapeHandling = Newtonsoft.Json.StringEscapeHandling::EscapeNonAscii;
+
+                jsonString = Newtonsoft.Json.JsonConvert::SerializeObject(userDefinedMetadata, serializerSettings);
+            }
+            else
+            {
+                return '';
+            }
+        }
+        catch 
+        {
+            jsonString = '{"error": "Unable to serialize user-defined metadata to JSON."}';
+        }
+
+        return jsonString;
+
     }
 
 ]]></Source>
@@ -305,19 +363,50 @@ public class OMGOutboundMessageTable extends common
     public static System.Collections.Generic.Dictionary<System.String, System.String> buildFileMetadata(OMGOutboundMessageTable _outboundMessageTable)
     {
         OMGOutboundMessageMetadata                                              outboundMessageMetadata;
-        System.Collections.Generic.Dictionary<System.String, System.String>     fileMetadata;
+        System.Collections.Generic.Dictionary<System.String, System.String>     fileMetadata = new System.Collections.Generic.Dictionary<System.String, System.String>();
+        str userDefinedMetadata;
 
         while select outboundMessageMetadata
             where outboundMessageMetadata.messageGUID == _outboundMessageTable.MessageGUID
+            &&    outboundMessageMetadata.IsSystem == NoYes::Yes
         {
-            if (!fileMetadata)
-            {
-                fileMetadata = new System.Collections.Generic.Dictionary<System.String, System.String>();
-            }
-            fileMetadata.Add(outboundMessageMetadata.MetadataKey, outboundMessageMetadata.MetadataValue);
+            fileMetadata.Add(OMGOutboundMessageTable::toStorageMetadataKey(outboundMessageMetadata.MetadataKey), outboundMessageMetadata.MetadataValue);
+        }
+
+        // after the loop over all metadata records
+        userDefinedMetadata = _outboundMessageTable.getMessageProperties();
+        if (userDefinedMetadata != '')
+        {
+            // Azure Storage metadata keys must be valid C# identifiers (letters, digits, underscore), so no hyphens
+            fileMetadata.Add('OMG_MsgProperties', userDefinedMetadata);
         }
 
         return fileMetadata;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>toStorageMetadataKey</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Converts a metadata key to a valid Azure Storage metadata name.
+    /// Azure Storage metadata names must be valid C# identifiers, so every character
+    /// that is not a letter, digit or underscore is replaced with an underscore
+    /// (e.g. OMG-DataAreaId becomes OMG_DataAreaId), and a leading digit is prefixed with an underscore.
+    /// </summary>
+    /// <param name = "_metadataKey">The metadata key as stored on the message</param>
+    /// <returns>A metadata key that Azure Storage accepts</returns>
+    public static str toStorageMetadataKey(str _metadataKey)
+    {
+        str storageKey = System.Text.RegularExpressions.Regex::Replace(_metadataKey, '[^A-Za-z0-9_]', '_');
+
+        if (System.Text.RegularExpressions.Regex::IsMatch(storageKey, '^[0-9]'))
+        {
+            storageKey = '_' + storageKey;
+        }
+
+        return storageKey;
     }
 
 ]]></Source>

@@ -118,7 +118,17 @@ class OMGAzureContainerWriter
         System.Object object = OMGOutboundMessageTable::buildFileMetadata(_outboundMessageTable);
                  
         blobClient.upload(_stream, true, CancellationToken::None);
-        blobClient.SetMetadata(object, null, CancellationToken::None);        
+        blobClient.SetMetadata(object, null, CancellationToken::None);     
+   
+        // Insert business event for file upload to Azure storage container
+        if (BusinessEventsConfigurationReader::isBusinessEventEnabled(classStr(OMGOutboundUploadBussEvent)))
+        {
+            OMGOutboundUploadBussEvent businessEvent = OMGOutboundUploadBussEvent::newFromOutboundMessageTable(_outboundMessageTable);
+            
+            // Only scheme, host and path. Drops any query string, so a SAS token is never published.
+            businessEvent.parmTargetUri(blobClient.Uri.GetLeftPart(System.UriPartial::Path));
+            businessEvent.send();
+        }
     }
 
 ]]></Source>

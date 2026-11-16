@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Diagnostics
+  GenerationTime="2026-11-16T16:14:08.7973733+01:00">
+  <Items>
+    <Diagnostic>
+      <DiagnosticType>VisualStudioIntegration</DiagnosticType>
+      <Severity>Informational</Severity>
+      <Path>C:\Users\jespe\AppData\Local\Microsoft\Dynamics365\10.0.2790.46\PackagesLocalDirectory\Bin\xppbp.exe</Path>
+      <Moniker>C:\Users\jespe\AppData\Local\Microsoft\Dynamics365\10.0.2790.46\PackagesLocalDirectory\Bin\xppbp.exe -referenceFolder="C:\Users\jespe\AppData\Local\Microsoft\Dynamics365\10.0.2790.46\PackagesLocalDirectory" -all -metadata="E:\github\ISV-metadata" -compilerMetadata="E:\github\ISV-metadata" -module="OMG" -model="OMGTutorial" -xmlLog="C:\Users\jespe\AppData\Local\Microsoft\Dynamics365\RuntimeSymLinks\obttstamb\ZZZZ__ISV-metadata\OMG\BPCheck.OMGTutorial.xml" </Moniker>
+      <Message>C:\Users\jespe\AppData\Local\Microsoft\Dynamics365\10.0.2790.46\PackagesLocalDirectory\Bin\xppbp.exe -referenceFolder="C:\Users\jespe\AppData\Local\Microsoft\Dynamics365\10.0.2790.46\PackagesLocalDirectory" -all -metadata="E:\github\ISV-metadata" -compilerMetadata="E:\github\ISV-metadata" -module="OMG" -model="OMGTutorial" -xmlLog="C:\Users\jespe\AppData\Local\Microsoft\Dynamics365\RuntimeSymLinks\obttstamb\ZZZZ__ISV-metadata\OMG\BPCheck.OMGTutorial.xml" </Message>
+    </Diagnostic>
+    <Diagnostic>
+      <DiagnosticType>VisualStudioIntegration</DiagnosticType>
+      <Severity>Informational</Severity>
+      <Path>C:\Users\jespe\AppData\Local\Microsoft\Dynamics365\10.0.2790.46\PackagesLocalDirectory\Bin\xppbp.exe</Path>
+      <Moniker>C:\Users\jespe\AppData\Local\Microsoft\Dynamics365\10.0.2790.46\PackagesLocalDirectory\Bin\xppbp.exe -referenceFolder="C:\Users\jespe\AppData\Local\Microsoft\Dynamics365\10.0.2790.46\PackagesLocalDirectory" -all -metadata="E:\github\ISV-metadata" -compilerMetadata="E:\github\ISV-metadata" -module="OMG" -model="OMG" -xmlLog="C:\Users\jespe\AppData\Local\Microsoft\Dynamics365\RuntimeSymLinks\obttstamb\ZZZZ__ISV-metadata\OMG\BPCheck.OMG.xml" </Moniker>
+      <Message>C:\Users\jespe\AppData\Local\Microsoft\Dynamics365\10.0.2790.46\PackagesLocalDirectory\Bin\xppbp.exe -referenceFolder="C:\Users\jespe\AppData\Local\Microsoft\Dynamics365\10.0.2790.46\PackagesLocalDirectory" -all -metadata="E:\github\ISV-metadata" -compilerMetadata="E:\github\ISV-metadata" -module="OMG" -model="OMG" -xmlLog="C:\Users\jespe\AppData\Local\Microsoft\Dynamics365\RuntimeSymLinks\obttstamb\ZZZZ__ISV-metadata\OMG\BPCheck.OMG.xml" </Message>
+    </Diagnostic>
+    <Diagnostic>
+      <DiagnosticType>CodeAnalysis</DiagnosticType>
+      <Severity>Informational</Severity>
+      <Path>dynamics://Class/OMGMessageProcessorDMF/Method/processMessage</Path>
+      <ElementType>AxClass</ElementType>
+      <Moniker>BPCheckSkipStatementValidation</Moniker>
+      <Line>139</Line>
+      <Column>17</Column>
+      <EndLine>142</EndLine>
+      <EndColumn>84</EndColumn>
+      <Message>Set-based operation must invoke Skip statements in method processMessage in class OMGMessageProcessorDMF; otherwise, execution will fall back to a row by row operation.</Message>
+      <ItemSpecific>
+        <OriginatorType
+          alias="0">BPCheckSkipStatementValidation</OriginatorType>
+        <Fields>
+          <methodName>processMessage</methodName>
+          <className>OMGMessageProcessorDMF</className>
+        </Fields>
+      </ItemSpecific>
+    </Diagnostic>
+  </Items>
+  <Aliases>
+    <Alias
+      assembly="Microsoft.Dynamics.AX.Framework.CustomizationAnalysisRules, Version=7.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
+      ns="Microsoft.Dynamics.AX.Framework.CustomizationAnalysisRules">0</Alias>
+  </Aliases>
+</Diagnostics>

@@ -3,6 +3,9 @@
 	<Name>OMGTutorialInboundValidator</Name>
 	<SourceCode>
 		<Declaration><![CDATA[
+/// <summary>
+/// Provides an extension point for validating tutorial inbound transport parameters.
+/// </summary>
 class OMGTutorialInboundValidator
 {
     OMGTutorialInboundDataContract      dataContract;
@@ -23,11 +26,15 @@ class OMGTutorialInboundValidator
 			<Method>
 				<Name>newValidation</Name>
 				<Source><![CDATA[
+    /// <summary>
+    /// Creates the validator selected by the inbound data contract.
+    /// </summary>
+    /// <param name = "_dataContract">The parameters to validate.</param>
+    /// <returns>The validator initialized with the data contract.</returns>
     public static OMGTutorialInboundValidator newValidation(OMGTutorialInboundDataContract    _dataContract)
     {
         SysDictClass                    sysDictValidationClass = new SysDictClass(_dataContract.validationClassId());
         OMGTutorialInboundValidator     inboundValidator;
-        ;
 
         if (sysDictValidationClass)
         {
@@ -43,11 +50,14 @@ class OMGTutorialInboundValidator
 			<Method>
 				<Name>validate</Name>
 				<Source><![CDATA[
+    /// <summary>
+    /// Accepts the tutorial parameters until transport-specific checks are implemented.
+    /// </summary>
+    /// <returns>True; add parameter checks when implementing a transport.</returns>
     public boolean validate()
     {
         // Place your validation of the inbound parameters here
         boolean     ret = true;
-        ;
 
         // TODO Validate something
         /*

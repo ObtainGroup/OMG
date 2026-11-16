@@ -188,7 +188,7 @@ class OMGInboundTransport_AzureContainer extends OMGInboundTransport
 
         catch (Exception::Error)
         {                        
-            throw Error("@ElectronicReporting:ImportCancelled");
+            throw Error("@OMG:ImportWasCancelled");
         }
     }
 

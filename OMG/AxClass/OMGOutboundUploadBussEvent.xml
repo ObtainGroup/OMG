@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundUploadBussEvent</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+/// <summary>
+/// Publishes outbound message details after a document upload.
+/// </summary>
+[BusinessEvents(classStr(OMGOutboundUploadBussEventContract), 'OMGUploadBusinessEvent', 'When OMG uploads a document', ModuleAxapta::General)]
+public class OMGOutboundUploadBussEvent extends BusinessEventsBase
+{
+    private OMGOutboundMessageTable outboundMessageTable;
+    private URL targetUri;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmTargetUri</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Gets or sets the URI of the uploaded blob, without query string or SAS token.
+    /// </summary>
+    /// <param name = "_targetUri">The blob URI.</param>
+    /// <returns>The blob URI.</returns>
+    public URL parmTargetUri(URL _targetUri = targetUri)
+    {
+        targetUri = _targetUri;
+        return targetUri;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmOutboundMessageTable</Name>
+				<Source><![CDATA[
+    public OMGOutboundMessageTable parmOutboundMessageTable(OMGOutboundMessageTable _outboundMessageTable = outboundMessageTable)
+    {
+        outboundMessageTable = _outboundMessageTable;
+        return outboundMessageTable;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>newFromOutboundMessageTable</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Creates an upload business event for an outbound message.
+    /// </summary>
+    /// <param name = "_outboundMessageTable">The uploaded outbound message.</param>
+    /// <returns>The business event initialized with the outbound message.</returns>
+    public static OMGOutboundUploadBussEvent newFromOutboundMessageTable(OMGOutboundMessageTable _outboundMessageTable)
+    {
+        OMGOutboundUploadBussEvent bussEvent = new OMGOutboundUploadBussEvent();
+
+        bussEvent.parmOutboundMessageTable(_outboundMessageTable);
+        return bussEvent;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>buildContract</Name>
+				<Source><![CDATA[
+    protected BusinessEventsContract buildContract()
+    {
+        OMGOutboundUploadBussEventContract contract = new OMGOutboundUploadBussEventContract();
+     
+        contract.parmMessageTypeId(outboundMessageTable.MessageTypeId);
+        contract.parmMessageGUID(outboundMessageTable.MessageGUID);
+        contract.parmDataAreaId(outboundMessageTable.SourceCompany);
+        contract.parmCreatedDateTime(outboundMessageTable.SourceDateTime);
+        contract.parmSourceEnvironment(Microsoft.Dynamics.ApplicationPlatform.Environment.EnvironmentFactory::GetApplicationEnvironment().Infrastructure.HostUrl);
+        contract.parmMsgProperties(outboundMessageTable.getMessageProperties());
+        contract.parmTargetUri(targetUri);
+        
+        return contract;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

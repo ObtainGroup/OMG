@@ -3,6 +3,9 @@
 	<Name>OMGTutorialLedgerJournalHeaderDataContract</Name>
 	<SourceCode>
 		<Declaration><![CDATA[
+/// <summary>
+/// Describes the company, journal name, description and lines of a tutorial journal.
+/// </summary>
 [DataContract]
 class OMGTutorialLedgerJournalHeaderDataContract
 {
