@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Diagnostics
+  GenerationTime="2026-11-16T15:30:30.2095535+01:00">
+  <Items>
+    <Diagnostic>
+      <DiagnosticType>CodeAnalysis</DiagnosticType>
+      <Severity>Informational</Severity>
+      <Path>dynamics://Class/OMGMessageProcessorDMF/Method/processMessage</Path>
+      <ElementType>AxClass</ElementType>
+      <Moniker>BPCheckSkipStatementValidation</Moniker>
+      <Line>139</Line>
+      <Column>17</Column>
+      <EndLine>142</EndLine>
+      <EndColumn>84</EndColumn>
+      <Message>Set-based operation must invoke Skip statements in method processMessage in class OMGMessageProcessorDMF; otherwise, execution will fall back to a row by row operation.</Message>
+      <ItemSpecific>
+        <OriginatorType
+          alias="0">BPCheckSkipStatementValidation</OriginatorType>
+        <Fields>
+          <methodName>processMessage</methodName>
+          <className>OMGMessageProcessorDMF</className>
+        </Fields>
+      </ItemSpecific>
+    </Diagnostic>
+  </Items>
+  <Aliases>
+    <Alias
+      assembly="Microsoft.Dynamics.AX.Framework.CustomizationAnalysisRules, Version=7.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
+      ns="Microsoft.Dynamics.AX.Framework.CustomizationAnalysisRules">0</Alias>
+  </Aliases>
+</Diagnostics>

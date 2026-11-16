@@ -3,6 +3,9 @@
 	<Name>OMGTutorialInboundDataContract</Name>
 	<SourceCode>
 		<Declaration><![CDATA[
+/// <summary>
+/// Supplies FTP connection parameters to the tutorial inbound transport.
+/// </summary>
 [DataContract]
 class OMGTutorialInboundDataContract extends OMGDataContract
 {

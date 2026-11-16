@@ -3,6 +3,9 @@
 	<Name>OMGTutorialLedgerJournalCreatePostHandler</Name>
 	<SourceCode>
 		<Declaration><![CDATA[
+/// <summary>
+/// Demonstrates journal creation; posting remains disabled until the example is completed.
+/// </summary>
 public class OMGTutorialLedgerJournalCreatePostHandler implements OMGIInboundMessageHandler
 {
 }
@@ -43,13 +46,13 @@ public class OMGTutorialLedgerJournalCreatePostHandler implements OMGIInboundMes
     /// <summary>
     /// Processes the message (creates and posts the journal)
     /// </summary>
-    /// <param name = "_message">Inbound message</param>
+    /// <param name = "_inboundMessageTable">The inbound message containing journal data.</param>
     /// <returns>Response contract</returns>
     public OMGInboundMessageResponseContract processMessage(OMGInboundMessageTable  _inboundMessageTable)
     {
         OMGInboundMessageResponseContract           response = new OMGInboundMessageResponseContract();
         OMGTutorialLedgerJournalHeaderDataContract  headerContract;
-        ;
+        int                                         infologStart = infologLine() + 1;
                        
         try
         {
@@ -93,14 +96,18 @@ public class OMGTutorialLedgerJournalCreatePostHandler implements OMGIInboundMes
                 }
             }
 
-            if (response.parmProcessedOk())
+            if (!response.parmProcessedOk())
             {
-                ttscommit;
+                throw error(response.parmResponse());
             }
-            else
-            {
-                ttsabort;
-            }
+
+            ttscommit;
+        }
+        catch (Exception::Error)
+        {
+            response.parmProcessedOk(false);
+            response.parmProcessingStatus(OMGProcessingStatus::Error);
+            response.parmResponse(OMGFeatures::getErrorStrSpecific(infologStart));
         }
         catch (Exception::CLRError)
         {
@@ -121,7 +128,7 @@ public class OMGTutorialLedgerJournalCreatePostHandler implements OMGIInboundMes
     /// <summary>
     /// Validates the journal name
     /// </summary>
-    /// <param name = "_journalHeader">JournalHeader</param>
+    /// <param name = "_journalNameId">The journal name to validate.</param>
     /// <returns>true if journal name is found, otherwise false</returns>
     
     protected boolean validateJournal(LedgerJournalNameId   _journalNameId)
@@ -143,7 +150,7 @@ public class OMGTutorialLedgerJournalCreatePostHandler implements OMGIInboundMes
     /// <summary>
     /// Creates the journal header
     /// </summary>
-    /// <param name = "_journalHeader">JournalHeader object (serialized .net)</param>
+    /// <param name = "_headerContract">The deserialized journal header and lines.</param>
     /// <param name = "_journalTable">LedgerJournalTable as OUT buffer</param>
     /// <returns>true, if created OK</returns>
     
@@ -203,7 +210,7 @@ public class OMGTutorialLedgerJournalCreatePostHandler implements OMGIInboundMes
     /// <summary>
     /// Creates the journal lines in the .net header object
     /// </summary>
-    /// <param name = "_journalHeader">.net header object</param>
+    /// <param name = "_journalLineList">The list of journal line data contracts.</param>
     /// <param name = "_journalTable">LedgderJournalTable buffer</param>
     /// <returns>true if created OK</returns>    
     protected boolean createJournalLines(List               _journalLineList, 
@@ -216,7 +223,6 @@ public class OMGTutorialLedgerJournalCreatePostHandler implements OMGIInboundMes
         LedgerJournalEngine ledgerJournalEngine = LedgerJournalEngine::construct(_journalTable.JournalType);
         ListEnumerator      lineListEnumerator  = _journalLineList.getEnumerator();
         Counter             counter             = 1;        
-        ;
         
         ledgerJournalEngine.newJournalActive(_journalTable);
         
@@ -288,74 +294,13 @@ public class OMGTutorialLedgerJournalCreatePostHandler implements OMGIInboundMes
 				<Name>postJournal</Name>
 				<Source><![CDATA[
     /// <summary>
-    /// Post the journal
+    /// Reports that journal posting is not implemented in this tutorial.
     /// </summary>
     /// <param name = "_ledgerJournalTable">LedgerJournalTable</param>
-    /// <returns>true if posted ok, otherwise false</returns>
+    /// <returns>False until account dimension resolution and posting are implemented.</returns>
     protected boolean postJournal(LedgerJournalTable _ledgerJournalTable)
     {
-        return true;    // TODO Fix
-        LedgerJournalCheckPost journalCheckPost = LedgerJournalCheckPost::newLedgerJournalTable(_ledgerJournalTable, NoYes::Yes, NoYes::No);
-    
-        journalCheckPost.runOperation();
-
-        _ledgerJournalTable.reread();
-
-        return _ledgerJournalTable.Posted == NoYes::Yes;
-    }
-
-]]></Source>
-			</Method>
-			<Method>
-				<Name>sampleMessage</Name>
-				<Source><![CDATA[
-    private void sampleMessage()
-    {
-        /*
-        {
-          "dataAreaId": "02SE",
-          "journalName": "AX2012",
-          "description": "AX2012, 9400008956, 0",
-          "lines": [
-            {
-              "text": "9400008956",
-              "transDate": "2024-10-17",
-              "debitAmount": "0",
-              "accountDisplayValue": "12002990",
-              "accountType": "Cust",
-              "creditAmount": "56350.04",
-              "currencyCode": "USD",
-              "invoice": "2018008955",
-              "dueDate": "2024-12-16",
-              "payment": "30"
-            },
-            {
-              "text": "9400008956",
-              "transDate": "2024-10-17",
-              "debitAmount": "0",
-              "accountDisplayValue": "3014-290-29999------",
-              "accountType": "Ledger",
-              "creditAmount": "40805.2",
-              "currencyCode": "USD",
-              "itemSalesTaxGroup": "GN",
-              "salesTaxGroup": "NLEUOUT",
-              "invoice": "2018008955"
-            },
-            {
-              "text": "9400008956",
-              "transDate": "2024-10-17",
-              "debitAmount": "97155.24",
-              "accountDisplayValue": "3014-290-29999------",
-              "accountType": "Ledger",
-              "creditAmount": "0",
-              "currencyCode": "USD",
-              "itemSalesTaxGroup": "GN",
-              "salesTaxGroup": "NLEUOUT",
-              "invoice": "2018008955"
-            }
-          ]
-        }
-        */
+        return checkFailed("@OMG:TutorialJournalPostingNotImplemented");
     }
 
 ]]></Source>

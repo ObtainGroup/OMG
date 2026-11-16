@@ -3,6 +3,9 @@
 	<Name>OMGTutorialLedgerJournalLineDataContract</Name>
 	<SourceCode>
 		<Declaration><![CDATA[
+/// <summary>
+/// Carries account, amount, date and tax information for a tutorial journal line.
+/// </summary>
 [DataContract]
 class OMGTutorialLedgerJournalLineDataContract
 {        

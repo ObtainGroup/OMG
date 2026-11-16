@@ -3,6 +3,9 @@
 	<Name>OMGTutorial_TestClass</Name>
 	<SourceCode>
 		<Declaration><![CDATA[
+/// <summary>
+/// Demonstrates deserializing an inbound ledger journal and enumerating its lines.
+/// </summary>
 internal final class OMGTutorial_TestClass
 {
 }
@@ -22,7 +25,6 @@ internal final class OMGTutorial_TestClass
         OMGTutorialLedgerJournalHeaderDataContract  headerContract;
         List                                        lineList;      
         OMGTutorialLedgerJournalLineDataContract    lineContract;
-        ;
        
         inboundMessageTable = OMGInboundMessageTable::findRecId(5637223820);
 

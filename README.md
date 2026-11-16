@@ -152,6 +152,12 @@ The transport base classes derive from `SysOperationFrameworkService`, so your
 transport gets batch execution, parameter dialogs and the standard D365
 operation behaviour without extra work.
 
+The ledger journal handler is an incomplete tutorial, not a production posting
+implementation. Account dimension resolution and posting must be implemented
+before use. Its posting hook reports an error, and failed journal processing
+rolls back journal changes instead of reporting a successful posting. Derived
+handlers can override the protected hook when implementing actual posting.
+
 The OMG model allows customisation, so you can extend its tables and forms
 directly as well — but prefer the extension points above, so that upgrades
 stay painless.

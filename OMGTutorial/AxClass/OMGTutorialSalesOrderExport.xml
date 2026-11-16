@@ -3,6 +3,9 @@
 	<Name>OMGTutorialSalesOrderExport</Name>
 	<SourceCode>
 		<Declaration><![CDATA[
+/// <summary>
+/// Demonstrates queuing JSON customer documents as outbound messages.
+/// </summary>
 class OMGTutorialSalesOrderExport
 {
 }
@@ -18,7 +21,7 @@ class OMGTutorialSalesOrderExport
         Newtonsoft.Json.JsonTextWriter  jsonWriter;
         CustTable                       custTable;
         OMGOutboundMessageTable         outboundMessageTable;
-        ; 
+        RecordInsertList                messageInsertList = new RecordInsertList(tableNum(OMGOutboundMessageTable));
          
         while select AccountNum, BankAccount, Party from custTable
             where custTable.CustGroup == '20'
@@ -27,25 +30,26 @@ class OMGTutorialSalesOrderExport
             jsonWriter         = new Newtonsoft.Json.JsonTextWriter(stringWriter);
 
             jsonWriter.WriteStartObject();
-            jsonWriter.WritePropertyName("AccountNum");
+            jsonWriter.WritePropertyName('AccountNum');
             jsonWriter.WriteValue(custTable.AccountNum);
-            jsonWriter.WritePropertyName("Name");
+            jsonWriter.WritePropertyName('Name');
             jsonWriter.WriteValue(custTable.nameAlias());
-            jsonWriter.WritePropertyName("BankAccount");
+            jsonWriter.WritePropertyName('BankAccount');
             jsonWriter.WriteValue(custTable.BankAccount);
             jsonWriter.WriteEndObject();
                  
             outboundMessageTable.clear();
             outboundMessageTable.MessageGUID        = newGuid();
-            outboundMessageTable.MessageTypeId      = "MyCustomMessageType";
+            outboundMessageTable.MessageTypeId      = 'MyCustomMessageType';
             outboundMessageTable.SourceCompany      = curExt();
             outboundMessageTable.SourceDateTime     = DateTimeUtil::getSystemDateTime();
             outboundMessageTable.MessageName        = custTable.AccountNum;
             outboundMessageTable.Message            = stringWriter.ToString();
             outboundMessageTable.TargetDirectory    = custTable.AccountNum;
-            outboundMessageTable.insert();
+            messageInsertList.add(outboundMessageTable);
         }
 
+        messageInsertList.insertDatabase();
     }
 
 ]]></Source>
