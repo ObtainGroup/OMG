@@ -3,6 +3,9 @@
 	<Name>OMGOutboundTestMessage</Name>
 	<SourceCode>
 		<Declaration><![CDATA[
+/// <summary>
+/// Represents a test outbound message used to exercise outbound message sending.
+/// </summary>
 internal final class OMGOutboundTestMessage
 {
 }

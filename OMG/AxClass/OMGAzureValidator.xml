@@ -86,7 +86,7 @@ class OMGAzureValidator
         {
             if (!KeyVaultCertificateHelper::getManualSecretValue(dataContract_Azure.parmKeyVaultCertificateRef(), false))
             {
-                ret = checkFailed("@KeyVault_ManualSecret:UnableToFindManualSecretValue");
+                ret = checkFailed("@OMG:KeyVaultSecretValueMissing");
             }
         }
 

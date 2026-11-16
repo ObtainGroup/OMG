@@ -3,6 +3,9 @@
 	<Name>OMGOutboundMessage</Name>
 	<SourceCode>
 		<Declaration><![CDATA[
+/// <summary>
+/// Builds an outbound message and its metadata for insertion into the message queue.
+/// </summary>
 public class OMGOutboundMessage
 {
     public OMGOutboundMessageTable outboundMessageTable;
@@ -38,6 +41,9 @@ public class OMGOutboundMessage
 			<Method>
 				<Name>send</Name>
 				<Source><![CDATA[
+    /// <summary>
+    /// Inserts the outbound message and adds its system and user-defined metadata.
+    /// </summary>
     public void send()
     {
         outboundMessageTable.insert();

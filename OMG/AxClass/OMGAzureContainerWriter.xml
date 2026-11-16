@@ -125,7 +125,8 @@ class OMGAzureContainerWriter
         {
             OMGOutboundUploadBussEvent businessEvent = OMGOutboundUploadBussEvent::newFromOutboundMessageTable(_outboundMessageTable);
             
-            businessEvent.parmTarget(blobClient.Uri.ToString());
+            // Only scheme, host and path. Drops any query string, so a SAS token is never published.
+            businessEvent.parmTargetUri(blobClient.Uri.GetLeftPart(System.UriPartial::Path));
             businessEvent.send();
         }
     }

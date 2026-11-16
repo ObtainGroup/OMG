@@ -37,7 +37,7 @@ class OMGUploadSingleMessageUI extends SysOperationAutomaticUIBuilder
         dialogFileUpload.style(FileUploadStyle::MinimalWithFilename);
         dialogFileUpload.fileTypesAccepted(this.dataContractObject().getAvailableFileTypes());
         dialogFileUpload.baseFileUploadStrategyClassName(classstr(FileUploadTemporaryStorageStrategy));
-        dialogFileUpload.fileNameLabel("@ApplicationPlatform:SelectFile");    
+        dialogFileUpload.fileNameLabel("@OMG:SelectFile");
         
         dialogCodePage = this.bindInfo().getDialogField(this.dataContractObject(), methodStr(OMGUploadSingleMessageContract, parmCodePage));
 

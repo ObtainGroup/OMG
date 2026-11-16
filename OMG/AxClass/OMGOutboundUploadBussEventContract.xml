@@ -3,6 +3,9 @@
 	<Name>OMGOutboundUploadBussEventContract</Name>
 	<SourceCode>
 		<Declaration><![CDATA[
+/// <summary>
+/// Carries message identifiers, metadata and the target of an outbound document upload.
+/// </summary>
 [DataContract]
 public final class OMGOutboundUploadBussEventContract extends BusinessEventsWorkflowDataContract
 {
@@ -12,7 +15,7 @@ public final class OMGOutboundUploadBussEventContract extends BusinessEventsWork
     private UtcDateTime CreatedDateTime;
     private str sourceEnvironment;
     private str msgProperties;
-    private str target;
+    private URL targetUri;
 
 }
 ]]></Declaration>
@@ -90,13 +93,18 @@ public final class OMGOutboundUploadBussEventContract extends BusinessEventsWork
 ]]></Source>
 			</Method>
 			<Method>
-				<Name>parmTarget</Name>
+				<Name>parmTargetUri</Name>
 				<Source><![CDATA[
-    [DataMember('Target'), BusinessEventsDataMember('MessageUri')]
-    public str parmTarget(str _target = target)
+    /// <summary>
+    /// Gets or sets the URI of the uploaded blob, without query string or SAS token.
+    /// </summary>
+    /// <param name = "_targetUri">The blob URI.</param>
+    /// <returns>The blob URI.</returns>
+    [DataMember('TargetUri'), BusinessEventsDataMember("@OMG:TargetUriDescr")]
+    public URL parmTargetUri(URL _targetUri = targetUri)
     {
-        target = _target;
-        return target;
+        targetUri = _targetUri;
+        return targetUri;
     }
 
 ]]></Source>

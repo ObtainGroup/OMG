@@ -69,7 +69,7 @@ class OMGInboundMessageTableChangeStatus extends RunBase
     Object dialog()
     {
         DialogRunbase   dialog = super();
-        dialog.caption("@SYS24620");
+        dialog.caption("@OMG:InboundMessageTableChangeStatus");
         dialogProcessingStatus = dialog.addFieldValue(enumStr(OMGProcessingStatus), processingStatus);
         return dialog;
     }
@@ -93,7 +93,7 @@ class OMGInboundMessageTableChangeStatus extends RunBase
 
         if (!oMGInboundMessageTable)
         {
-            error(strFmt("@SYS24642", _oMGInboundMessageTable.RecId));
+            error(strFmt("@OMG:InboundMessageRecordNotFound", _oMGInboundMessageTable.RecId));
             return;
         }
 
