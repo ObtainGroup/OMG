@@ -122,6 +122,7 @@ OMGMessageTypeTableDevDoc=This table contains setup for message types
 OMGOutboundMessageStatus=OMG outbound message status
 OMGOutboundMessageTableDevDoc=This table holds formatted messages that are to be exported
  ;{locked}
+OMGOutboundMetadataIsSystem=System generated
 OMGUser=Obtain Message Gateway user
 Outbound=Outbound
 OutboundMessageDetails=OMG outbound message details
@@ -169,6 +170,8 @@ TmpLookupTableDevDoc=The table holds name and description and can be used to cre
  ;{locked}
 Upload=Upload
  ;{locked}
+UploadBusinessEvent=OMG Uploaded document event
+UploadBusinessEventDescr=When OMG uploads a document to a file storage
 UploadCancelled=Upload cancelled
 UploadFilesToAzureFileShare=Upload files to Azure file share
 UploadSingleMessage=Upload single message

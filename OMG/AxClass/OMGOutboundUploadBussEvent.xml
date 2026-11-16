@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundUploadBussEvent</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[BusinessEvents(classStr(OMGOutboundUploadBussEventContract), 'OMGUploadBusinessEvent', 'When OMG uploads a document', ModuleAxapta::General)]
+public class OMGOutboundUploadBussEvent extends BusinessEventsBase
+{
+    private OMGOutboundMessageTable outboundMessageTable;
+    private str target;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmTarget</Name>
+				<Source><![CDATA[
+    public str parmTarget(str _target = target)
+    {
+        target = _target;
+        return target;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmOutboundMessageTable</Name>
+				<Source><![CDATA[
+    public OMGOutboundMessageTable parmOutboundMessageTable(OMGOutboundMessageTable _outboundMessageTable = outboundMessageTable)
+    {
+        outboundMessageTable = _outboundMessageTable;
+        return outboundMessageTable;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>newFromOutboundMessageTable</Name>
+				<Source><![CDATA[
+    // Constructor taking OMGOutboundMessageTable as parameter to initialize the contract
+    public static OMGOutboundUploadBussEvent newFromOutboundMessageTable(OMGOutboundMessageTable _outboundMessageTable)
+    {
+        OMGOutboundUploadBussEvent bussEvent = new OMGOutboundUploadBussEvent();
+
+        bussEvent.parmOutboundMessageTable(_outboundMessageTable);
+        return bussEvent;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>buildContract</Name>
+				<Source><![CDATA[
+    protected BusinessEventsContract buildContract()
+    {
+        OMGOutboundUploadBussEventContract contract = new OMGOutboundUploadBussEventContract();
+     
+        contract.parmMessageTypeId(outboundMessageTable.MessageTypeId);
+        contract.parmMessageGUID(outboundMessageTable.MessageGUID);
+        contract.parmDataAreaId(outboundMessageTable.DataAreaId);
+        contract.parmCreatedDateTime(outboundMessageTable.CreatedDateTime);
+        contract.parmSourceEnvironment(Microsoft.Dynamics.ApplicationPlatform.Environment.EnvironmentFactory::GetApplicationEnvironment().Infrastructure.HostUrl);
+        contract.parmMsgProperties(outboundMessageTable.getMessageProperties());
+        contract.parmTarget(target);
+        
+        return contract;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

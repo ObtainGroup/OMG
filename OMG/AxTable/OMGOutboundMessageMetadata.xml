@@ -39,19 +39,45 @@ public class OMGOutboundMessageMetadata extends common
     /// <param name = "_metadataValue">The metadata value</param>
     public static void createMetadata(OMGMessageGUID    _messageGUID,
                                       OMGMetadataKey    _metadataKey,
-                                      OMGMetadataValue  _metadataValue)
+                                      OMGMetadataValue  _metadataValue,
+                                      OMGOutboundMetadataIsSystem _isSystem = NoYes::No)
     {
-        OMGOutboundMessageMetadata metadata;
-        ;
 
         if (!OMGOutboundMessageMetadata::exist(_messageGUID, _metadataKey))
         {
-            metadata.clear();
+            OMGOutboundMessageMetadata metadata;
+
             metadata.initValue();
             metadata.MessageGUID    = _messageGUID;
             metadata.MetadataKey    = _metadataKey;
             metadata.MetadataValue  = _metadataValue;
+            metadata.IsSystem        = _isSystem;
             metadata.insert();
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>createMetadataRecordInsertList</Name>
+				<Source><![CDATA[
+    public static void createMetadataRecordInsertList(RecordInsertList  _recordInsertList,
+                                                        OMGMessageGUID    _messageGUID,
+                                                        OMGMetadataKey    _metadataKey,
+                                                        OMGMetadataValue  _metadataValue,
+                                                        OMGOutboundMetadataIsSystem _isSystem = NoYes::No)
+    {
+
+        if (!OMGOutboundMessageMetadata::exist(_messageGUID, _metadataKey))
+        {
+            OMGOutboundMessageMetadata metadata;
+
+            metadata.initValue();
+            metadata.MessageGUID    = _messageGUID;
+            metadata.MetadataKey    = _metadataKey;
+            metadata.MetadataValue  = _metadataValue;
+            metadata.IsSystem        = _isSystem;
+            _recordInsertList.add(metadata);
         }
     }
 
@@ -141,6 +167,9 @@ public class OMGOutboundMessageMetadata extends common
 				<AxTableFieldGroupField>
 					<DataField>MetadataValue</DataField>
 				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>IsSystem</DataField>
+				</AxTableFieldGroupField>
 			</Fields>
 		</AxTableFieldGroup>
 	</FieldGroups>
@@ -166,6 +195,15 @@ public class OMGOutboundMessageMetadata extends common
 			<Name>MetadataValue</Name>
 			<ExtendedDataType>OMGMetadataValue</ExtendedDataType>
 			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>IsSystem</Name>
+			<AllowEdit>No</AllowEdit>
+			<AllowEditOnCreate>No</AllowEditOnCreate>
+			<ExtendedDataType>OMGOutboundMetadataIsSystem</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<EnumType>NoYes</EnumType>
 		</AxTableField>
 	</Fields>
 	<FullTextIndexes />

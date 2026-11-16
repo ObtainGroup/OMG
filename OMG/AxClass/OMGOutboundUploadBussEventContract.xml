@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>OMGOutboundUploadBussEventContract</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[DataContract]
+public final class OMGOutboundUploadBussEventContract extends BusinessEventsWorkflowDataContract
+{
+    private OMGMessageTypeId messageTypeId;
+    private OMGMessageGUID messageGUID;
+    private DataAreaId dataAreaId;
+    private UtcDateTime CreatedDateTime;
+    private str sourceEnvironment;
+    private str msgProperties;
+    private str target;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmMessageTypeId</Name>
+				<Source><![CDATA[
+    [DataMember('MessageTypeId'), BusinessEventsDataMember('MessageTypeId')]
+    public OMGMessageTypeId parmMessageTypeId(OMGMessageTypeId _messageTypeId = messageTypeId)
+    {
+        messageTypeId = _messageTypeId;
+        return messageTypeId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMessageGUID</Name>
+				<Source><![CDATA[
+    [DataMember('MessageGUID'), BusinessEventsDataMember('CorrelationId')]
+    public OMGMessageGUID parmMessageGUID(OMGMessageGUID _messageGUID = messageGUID)
+    {
+        messageGUID = _messageGUID;
+        return messageGUID;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmDataAreaId</Name>
+				<Source><![CDATA[
+    [DataMember('DataAreaId')]
+    public DataAreaId parmDataAreaId(DataAreaId _dataAreaId = dataAreaId)
+    {
+        dataAreaId = _dataAreaId;
+        return dataAreaId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCreatedDateTime</Name>
+				<Source><![CDATA[
+    [DataMember('CreatedDateTime'), BusinessEventsDataMember('MessageCreatedDateTime')]
+    public UtcDateTime parmCreatedDateTime(UtcDateTime _createdDateTime = createdDateTime)
+    {
+        createdDateTime = _createdDateTime;
+        return createdDateTime;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmSourceEnvironment</Name>
+				<Source><![CDATA[
+    [DataMember('SourceEnvironment'), BusinessEventsDataMember('MessageSourceEnvironment')]                               
+    public str parmSourceEnvironment(str _sourceEnvironment = sourceEnvironment)
+    {
+        sourceEnvironment = _sourceEnvironment;
+        return sourceEnvironment;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmMsgProperties</Name>
+				<Source><![CDATA[
+    [DataMember('MsgProperties'), BusinessEventsDataMember('MessageProperties')]
+    public str parmMsgProperties(str _msgProperties = msgProperties)
+    {
+        msgProperties = _msgProperties;
+        return msgProperties;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmTarget</Name>
+				<Source><![CDATA[
+    [DataMember('Target'), BusinessEventsDataMember('MessageUri')]
+    public str parmTarget(str _target = target)
+    {
+        target = _target;
+        return target;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>
